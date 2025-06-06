@@ -3,7 +3,7 @@
 export interface Hotel {
   name: string;
   // price_modifier is likely less useful now, but kept for potential future needs
-  price_modifier: number;
+  price_modifier?: number;
 }
 
 // Defines a location involved in the program (name and display label)
@@ -23,7 +23,9 @@ export interface Pricing {
 
 export interface PricingCombinations {
   // Key is constructed dynamically based on selected hotel names for the program's locations
-  // e.g., "HotelNameLoc1_HotelNameLoc2_..."
+  // Key format: "HotelNameLoc1_HotelNameLoc2_..."
+  // NEW: A part for a location can be a comma-separated list of hotels with the same price (NO SPACES after comma)
+  // e.g., "HotelA,HotelB_HotelC_..." means HotelA and HotelB in Loc1 have the same price when combined with HotelC in Loc2
   [combinationKey: string]: Pricing;
 }
 
@@ -54,7 +56,7 @@ export interface ProgramsData {
   [programId: string]: Program;
 }
 
-// Updated Data Structure with Tier-Specific Hotels
+// Updated Data Structure with Tier-Specific Hotels & Corrected Grouped Pricing Key
 export const programsData: ProgramsData = {
   umrah_july: {
     title: "عمرة لشهر يوليوز",
@@ -142,7 +144,7 @@ export const programsData: ProgramsData = {
     program_type: "tourism",
     locations: [
       { name: "istanbul", label: "فندق في اسطنبول" },
-      // { name: "cappadocia", label: "Hotel in Cappadocia" },
+      // { name: "cappadocia", label: "Hotel in Cappadocia" }, // Assuming Cappadocia is removed as per user's previous test
     ],
     packages: {
       comfort: {
@@ -154,15 +156,17 @@ export const programsData: ProgramsData = {
               { name: "Point Hotel Barbaros (Comfort)" },
             ],
           },
+          // No Cappadocia hotels needed if only Istanbul
         },
         pricing_combinations: {
-          "CVK Park Bosphorus Hotel (Comfort),  Point Hotel Barbaros (Comfort)":
-            {
-              quintuple: 18000,
-              quad: 19000,
-              triple: 20000,
-              double: 22000,
-            },
+          // *** CORRECTED GROUPED KEY (No space after comma) ***
+          // This key applies if *either* CVK or Point Hotel is selected
+          "CVK Park Bosphorus Hotel (Comfort),Point Hotel Barbaros (Comfort)": {
+            quintuple: 18000,
+            quad: 19000,
+            triple: 20000,
+            double: 22000,
+          },
         },
       },
       luxury: {
@@ -171,8 +175,10 @@ export const programsData: ProgramsData = {
           istanbul: {
             hotels: [{ name: "Swissôtel The Bosphorus Istanbul (Luxury)" }],
           },
+          // No Cappadocia hotels needed if only Istanbul
         },
         pricing_combinations: {
+          // Key is just the single hotel name
           "Swissôtel The Bosphorus Istanbul (Luxury)": {
             quad: 21000,
             triple: 22000,

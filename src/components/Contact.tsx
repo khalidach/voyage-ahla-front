@@ -66,21 +66,23 @@ const Contact = () => {
         <div className="mt-16 text-center">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 max-w-2xl mx-auto shadow-lg">
             <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              لماذا تختارنا؟
+              توقيت العمل
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6 text-right">
               <div className="flex items-start space-x-reverse space-x-3">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
                 <div>
-                  <p className="font-semibold text-gray-800">خدمة موثوقة</p>
-                  <p className="text-gray-600 text-sm">آلاف العملاء الراضين</p>
+                  <p className="font-semibold text-gray-800">
+                    من الاثنين الى الجمعة
+                  </p>
+                  <p className="text-gray-600 text-sm">9:00am - 18:30pm</p>
                 </div>
               </div>
               <div className="flex items-start space-x-reverse space-x-3">
                 <div className="w-2 h-2 bg-gold-500 rounded-full mt-2"></div>
                 <div>
-                  <p className="font-semibold text-gray-800">أفضل الأسعار</p>
-                  <p className="text-gray-600 text-sm">تسعير تنافسي وشفاف</p>
+                  <p className="font-semibold text-gray-800">السبت</p>
+                  <p className="text-gray-600 text-sm">9:00am - 18:00pm</p>
                 </div>
               </div>
             </div>

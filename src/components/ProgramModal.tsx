@@ -283,7 +283,7 @@ const ProgramModal = ({ programId, onClose }: ProgramModalProps) => {
         `الرجاء تزويدي بمزيد من التفاصيل حول التوافر وعملية الحجز.`
     );
 
-    window.open(`https://wa.me/1234567890?text=${message}`, "_blank");
+    window.open(`https://wa.me/212778558505?text=${message}`, "_blank");
   };
 
   // Function to get available room options for the current selection
