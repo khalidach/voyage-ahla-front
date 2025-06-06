@@ -3,7 +3,7 @@
 export interface Hotel {
   name: string;
   // price_modifier is likely less useful now, but kept for potential future needs
-  price_modifier?: number;
+  price_modifier: number;
 }
 
 // Defines a location involved in the program (name and display label)

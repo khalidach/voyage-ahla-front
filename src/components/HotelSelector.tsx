@@ -8,7 +8,7 @@ import {
 
 interface Hotel {
   name: string;
-  price_modifier: number;
+  price_modifier?: number;
 }
 
 interface HotelSelectorProps {
