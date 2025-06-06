@@ -85,6 +85,13 @@ const Contact = () => {
                   <p className="text-gray-600 text-sm">9:00am - 18:00pm</p>
                 </div>
               </div>
+              <div className="flex items-start space-x-reverse space-x-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                <div>
+                  <p className="font-semibold text-gray-800">الأحد</p>
+                  <p className="text-gray-600 text-sm">مغلق</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
