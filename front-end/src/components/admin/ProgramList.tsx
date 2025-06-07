@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Program } from "@/types/program";
-import ProgramFormModal from "./ProgramFormModal"; // Import the new form modal
+import ProgramFormModal from "./ProgramFormModal";
 
 const ProgramList = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -43,8 +43,13 @@ const ProgramList = () => {
   }, []);
 
   const fetchPrograms = () => {
+    const token = localStorage.getItem("token"); // Get the token from localStorage
     axios
-      .get("http://localhost:5000/programs/")
+      .get("http://localhost:5000/programs/", {
+        headers: {
+          "x-auth-token": token, // Include the token in the headers
+        },
+      })
       .then((response) => {
         setPrograms(response.data);
       })
@@ -82,9 +87,14 @@ const ProgramList = () => {
   };
 
   const confirmDelete = () => {
+    const token = localStorage.getItem("token"); // Get the token
     if (programToDelete) {
       axios
-        .delete(`http://localhost:5000/programs/${programToDelete}`)
+        .delete(`http://localhost:5000/programs/${programToDelete}`, {
+          headers: {
+            "x-auth-token": token, // Include the token
+          },
+        })
         .then(() => {
           fetchPrograms();
         })

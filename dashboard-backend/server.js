@@ -1,4 +1,3 @@
-// Import necessary libraries
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -9,7 +8,6 @@ const port = process.env.PORT || 5000;
 
 // --- Middleware ---
 app.use(cors());
-// Increase the limit to handle large Base64 image strings
 app.use(express.json({ limit: "50mb" }));
 
 // --- Database Connection ---
@@ -22,12 +20,27 @@ connection.once("open", () => {
 
 // --- API Routes ---
 const programsRouter = require("./routes/programs");
+const authRouter = require("./routes/auth");
+const authMiddleware = require("./middleware/auth"); // Import auth middleware
+const Program = require("./models/program.model"); // Import the Program model
 
 app.get("/", (req, res) => {
   res.send("Ahla Travel Agency Dashboard API is running!");
 });
 
-app.use("/programs", programsRouter);
+app.use("/auth", authRouter); // Auth routes are public (login, register)
+
+// Public route for fetching all programs (for the main site)
+// This route should come BEFORE the protected programsRouter
+app.get("/programs", (req, res) => {
+  Program.find() // Directly fetch programs
+    .then((programs) => res.json(programs))
+    .catch((err) => res.status(400).json("Error: " + err));
+});
+
+// Protect all other /programs/* routes (POST, PUT, DELETE, and specific GET by ID)
+// The programsRouter itself still contains these protected operations
+app.use("/programs", authMiddleware, programsRouter);
 
 // --- Start the Server ---
 app.listen(port, () => {
