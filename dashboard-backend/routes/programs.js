@@ -10,7 +10,7 @@ cloudinary.config({
 
 // --- GET ALL PROGRAMS ---
 router.route("/").get((req, res) => {
-  Program.find({})
+  Program.find({}) // Ensure image is not excluded here for main page
     .then((programs) => res.json(programs))
     .catch((err) => res.status(400).json("Error: " + err));
 });
@@ -44,8 +44,20 @@ router.route("/add").post(async (req, res) => {
       return res.status(400).json("Error: Image is required.");
     }
 
+    // Destructure `days` from req.body
     const { title, description, program_type, locations, packages, includes } =
       req.body;
+
+    // Parse the days for each package tier
+    const parsedPackages = JSON.parse(packages);
+    for (const tierName in parsedPackages) {
+      if (parsedPackages.hasOwnProperty(tierName)) {
+        parsedPackages[tierName].days = parseInt(
+          req.body[`packages.${tierName}.days`],
+          10
+        ); // Assume days will be sent in a distinct way
+      }
+    }
 
     const newProgram = new Program({
       title,
@@ -53,7 +65,7 @@ router.route("/add").post(async (req, res) => {
       image: imageUrl,
       program_type,
       locations: JSON.parse(locations),
-      packages: JSON.parse(packages),
+      packages: parsedPackages, // Use the parsed packages with days
       includes: JSON.parse(includes),
     });
 
@@ -97,7 +109,19 @@ router.route("/update/:id").post(async (req, res) => {
     program.image = imageUrl;
     program.program_type = req.body.program_type;
     program.locations = JSON.parse(req.body.locations);
-    program.packages = JSON.parse(req.body.packages);
+
+    // Parse packages and update days
+    const updatedPackages = JSON.parse(req.body.packages);
+    for (const tierName in updatedPackages) {
+      if (updatedPackages.hasOwnProperty(tierName)) {
+        updatedPackages[tierName].days = parseInt(
+          req.body[`packages.${tierName}.days`],
+          10
+        ); // Assume days sent separately
+      }
+    }
+    program.packages = updatedPackages; // Use the updated packages with days
+
     program.includes = JSON.parse(req.body.includes);
 
     await program.save();

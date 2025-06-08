@@ -12,6 +12,7 @@ const TierLocationHotelsSchema = new Schema({
 
 const PackageTierSchema = new Schema({
   nights: { type: Number, required: true },
+  days: { type: Number, required: true }, // ADD THIS LINE
   location_hotels: {
     type: Map,
     of: TierLocationHotelsSchema,

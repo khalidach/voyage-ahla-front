@@ -16,6 +16,7 @@ export interface Pricing {
 
 export interface PackageTier {
   nights: number;
+  days?: number; // ADD THIS LINE (if not already present)
   location_hotels: {
     [locationName: string]: TierLocationHotels;
   };

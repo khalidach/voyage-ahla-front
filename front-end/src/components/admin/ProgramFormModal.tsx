@@ -25,10 +25,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Trash2, PlusCircle, Upload } from "lucide-react";
-import type { Program, ProgramLocation } from "@/types/program";
+// Import Program and PackageTier from types/program
+import type { Program, ProgramLocation, PackageTier } from "@/types/program";
 
+// Extend ProgramFormData to include 'days' in PackageTier
 type ProgramFormData = Partial<Program> & {
   imageFile?: File | null;
+  // Ensure PackageTier has 'days' property here for form handling
+  packages?: {
+    [tierName: string]: Partial<PackageTier> & { days?: number };
+  };
 };
 
 interface ProgramFormModalProps {
@@ -115,6 +121,7 @@ const ProgramFormModal = ({
       if (!draft.packages) draft.packages = {};
       draft.packages[key] = {
         nights: 0,
+        days: 0, // Initialize days for new tier
         location_hotels: {},
         pricing_combinations: {},
       };
@@ -125,7 +132,7 @@ const ProgramFormModal = ({
     });
   const handleTierChange = (
     oldName: string,
-    field: "name" | "nights",
+    field: "name" | "nights" | "days", // Add "days" field
     value: string
   ) => {
     updateNestedState((draft) => {
@@ -135,6 +142,9 @@ const ProgramFormModal = ({
 
       if (field === "nights") {
         data.nights = Number(value) || 0;
+      } else if (field === "days") {
+        // Handle days change
+        data.days = Number(value) || 0;
       } else if (field === "name" && value && oldName !== value) {
         delete packages[oldName];
         packages[value] = data;
@@ -239,7 +249,7 @@ const ProgramFormModal = ({
     dataToSend.append("program_type", formData.program_type || "umrah");
     dataToSend.append("includes", JSON.stringify(formData.includes || []));
     dataToSend.append("locations", JSON.stringify(formData.locations || []));
-    dataToSend.append("packages", JSON.stringify(formData.packages || {}));
+    dataToSend.append("packages", JSON.stringify(formData.packages || {})); // packages already contains 'days' now
 
     if (formData.imageFile) {
       dataToSend.append("image", formData.imageFile);
@@ -448,6 +458,16 @@ const ProgramFormModal = ({
                           }
                           onClick={(e) => e.stopPropagation()}
                           placeholder="الليالي"
+                          className="w-24"
+                        />
+                        <Input // ADDED DAYS INPUT
+                          type="number"
+                          value={tierData.days}
+                          onChange={(e) =>
+                            handleTierChange(tierName, "days", e.target.value)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="الأيام"
                           className="w-24"
                         />
                       </div>

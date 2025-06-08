@@ -5,7 +5,7 @@ import HotelSelector from "./HotelSelector";
 import RoomSelector from "./RoomSelector";
 import PriceDisplay from "./PriceDisplay";
 import type { Program, PackageTier, Hotel, Pricing } from "../types/program";
-import { BedDouble } from "lucide-react";
+import { BedDouble, CalendarDays } from "lucide-react"; // Import CalendarDays
 
 interface ProgramModalProps {
   program: Program;
@@ -178,7 +178,7 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
         `- الفئة: ${tierLabel}\n` +
         `- نوع الغرفة: ${roomLabel}\n` +
         `${hotelDetails}` +
-        `- المدة: ${tierData.nights} ليالي\n` +
+        `- المدة: ${tierData.days} أيام و ${tierData.nights} ليالي\n` + // Modified line
         `- السعر: ${currentPrice} درهم\n\n` +
         `الرجاء تزويدي بمزيد من التفاصيل حول التوافر وعملية الحجز.`
     );
@@ -256,10 +256,15 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
                     }
                   />
                 ))}
-                {/* Display number of nights */}
+                {/* Display number of days and nights */}
                 {currentTierData && (
-                  <div>
-                    <p className="font-semibold text-gray-700">عدد الليالي:</p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center text-gray-700">
+                      <CalendarDays className="w-5 h-5 ml-2 text-gray-500" />
+                      <p className="font-semibold">
+                        {currentTierData.days} أيام
+                      </p>
+                    </div>
                     <div className="flex items-center text-gray-700">
                       <BedDouble className="w-5 h-5 ml-2 text-gray-500" />
                       <p className="font-semibold">
