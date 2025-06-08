@@ -153,7 +153,7 @@ const Programs = () => {
                         </div>
                       )}
                     </div>
-                    <div className="p-6 flex flex-col flex-grow">
+                    <div className="p-3 md:p-6 flex flex-col flex-grow">
                       <h3 className="text-2xl font-bold text-gray-800 mb-3">
                         {program.title}
                       </h3>
@@ -166,7 +166,7 @@ const Programs = () => {
                         <div className="flex items-center justify-between">
                           <Button
                             onClick={() => openModal(program)}
-                            className="gold-gradient text-white hover:opacity-90"
+                            className="bg-gold-gradient text-white hover:opacity-90"
                           >
                             عرض التفاصيل
                           </Button>
