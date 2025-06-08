@@ -35,8 +35,8 @@ router.post("/register", async (req, res) => {
     res
       .cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-        sameSite: "Strict", // Protect against CSRF
+        secure: true, // Must be true when SameSite is 'None'
+        sameSite: "None", // Allow cross-site requests to send the cookie
       })
       .json({
         user: {
@@ -76,8 +76,8 @@ router.post("/login", async (req, res) => {
     res
       .cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-        sameSite: "Strict", // Protect against CSRF
+        secure: true, // Must be true when SameSite is 'None'
+        sameSite: "None", // Allow cross-site requests to send the cookie
       })
       .json({
         user: {
