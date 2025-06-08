@@ -166,7 +166,7 @@ const Programs = () => {
                         <div className="flex items-center justify-between">
                           <Button
                             onClick={() => openModal(program)}
-                            className="bg-gold-gradient text-white hover:opacity-90"
+                            className="gold-gradient text-white hover:opacity-90"
                           >
                             عرض التفاصيل
                           </Button>
