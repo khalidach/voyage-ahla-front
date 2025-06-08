@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // --- Middleware ---
 app.use(
   cors({
-    origin: ["http://localhost:8080", "https://voyageahlaelkheir.vercel.app/"], // Add your deployed frontend URL
+    origin: ["http://localhost:8080", "https://voyageahlaelkheir.vercel.app"], // Add your deployed frontend URL
     credentials: true,
   })
 );

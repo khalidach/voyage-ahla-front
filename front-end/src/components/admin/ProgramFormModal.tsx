@@ -36,6 +36,8 @@ interface ProgramFormModalProps {
   programToEdit?: Program | null;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const initialFormData: ProgramFormData = {
   title: "",
   description: "",
@@ -232,10 +234,10 @@ const ProgramFormModal = ({
     e.preventDefault();
     const apiCall = isEditing
       ? axios.post(
-          `http://localhost:5000/programs/update/${programToEdit!._id}`,
+          `${API_BASE_URL}/programs/update/${programToEdit!._id}`,
           formData
         )
-      : axios.post("http://localhost:5000/programs/add", formData);
+      : axios.post(`${API_BASE_URL}/programs/add`, formData);
     apiCall
       .then(() => {
         onProgramSaved();
