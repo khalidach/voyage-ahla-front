@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const fileUpload = require("express-fileupload");
+const cookieParser = require("cookie-parser"); // Add this line
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,6 +17,7 @@ app.use(
 );
 app.use(express.json({ limit: "50mb" }));
 app.use(fileUpload({ useTempFiles: true }));
+app.use(cookieParser()); // Add this line to enable cookie parsing
 
 // --- Database Connection ---
 const uri = process.env.MONGODB_URI;
