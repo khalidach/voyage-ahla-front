@@ -31,6 +31,9 @@ import {
 import type { Program } from "@/types/program";
 import ProgramFormModal from "./ProgramFormModal";
 
+// Get the API URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ProgramList = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -43,13 +46,8 @@ const ProgramList = () => {
   }, []);
 
   const fetchPrograms = () => {
-    const token = localStorage.getItem("token"); // Get the token from localStorage
     axios
-      .get("http://localhost:5000/programs/", {
-        headers: {
-          "x-auth-token": token, // Include the token in the headers
-        },
-      })
+      .get(`${API_BASE_URL}/programs/`) // Use the environment variable
       .then((response) => {
         setPrograms(response.data);
       })
@@ -72,7 +70,7 @@ const ProgramList = () => {
   // --- CRUD Handlers ---
 
   const handleAddProgram = () => {
-    setProgramToEdit(null); // Ensure we are not editing
+    setProgramToEdit(null);
     setIsFormModalOpen(true);
   };
 
@@ -87,14 +85,11 @@ const ProgramList = () => {
   };
 
   const confirmDelete = () => {
-    const token = localStorage.getItem("token"); // Get the token
     if (programToDelete) {
       axios
-        .delete(`http://localhost:5000/programs/${programToDelete}`, {
-          headers: {
-            "x-auth-token": token, // Include the token
-          },
-        })
+        .delete(
+          `<span class="math-inline">\\{API\\_BASE\\_URL\\}/programs/</span>{programToDelete}`
+        ) // Use the environment variable
         .then(() => {
           fetchPrograms();
         })
@@ -107,7 +102,7 @@ const ProgramList = () => {
   };
 
   const handleProgramSaved = () => {
-    fetchPrograms(); // Refresh list after add/edit
+    fetchPrograms();
   };
 
   return (

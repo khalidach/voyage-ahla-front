@@ -11,7 +11,10 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast"; // Assuming you have a useToast hook for notifications
+import { useToast } from "@/components/ui/use-toast";
+
+// Get the API URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -22,16 +25,16 @@ const LoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/auth/login", {
+      await axios.post(`${API_BASE_URL}/auth/login`, {
+        // Use the environment variable
         username,
         password,
       });
-      localStorage.setItem("token", response.data.token); // Store the JWT token
       toast({
         title: "تم تسجيل الدخول بنجاح!",
         description: "أهلاً بك في لوحة التحكم.",
       });
-      navigate("/admin"); // Redirect to admin dashboard on successful login
+      navigate("/admin");
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",
