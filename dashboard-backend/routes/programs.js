@@ -48,16 +48,9 @@ router.route("/add").post(async (req, res) => {
     const { title, description, program_type, locations, packages, includes } =
       req.body;
 
-    // Parse the days for each package tier
+    // The 'days' property is already included when JSON.parse(packages) is done.
+    // Removed the problematic loop that tried to re-parse it from a non-existent field.
     const parsedPackages = JSON.parse(packages);
-    for (const tierName in parsedPackages) {
-      if (parsedPackages.hasOwnProperty(tierName)) {
-        parsedPackages[tierName].days = parseInt(
-          req.body[`packages.${tierName}.days`],
-          10
-        ); // Assume days will be sent in a distinct way
-      }
-    }
 
     const newProgram = new Program({
       title,
@@ -110,16 +103,9 @@ router.route("/update/:id").post(async (req, res) => {
     program.program_type = req.body.program_type;
     program.locations = JSON.parse(req.body.locations);
 
-    // Parse packages and update days
+    // The 'days' property is already included when JSON.parse(req.body.packages) is done.
+    // Removed the problematic loop that tried to re-parse it from a non-existent field.
     const updatedPackages = JSON.parse(req.body.packages);
-    for (const tierName in updatedPackages) {
-      if (updatedPackages.hasOwnProperty(tierName)) {
-        updatedPackages[tierName].days = parseInt(
-          req.body[`packages.${tierName}.days`],
-          10
-        ); // Assume days sent separately
-      }
-    }
     program.packages = updatedPackages; // Use the updated packages with days
 
     program.includes = JSON.parse(req.body.includes);
