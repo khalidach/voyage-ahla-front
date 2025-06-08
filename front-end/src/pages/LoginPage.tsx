@@ -1,9 +1,8 @@
+// LoginPage.tsx
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -11,9 +10,11 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input"; // Make sure Input is imported
+import { Label } from "@/components/ui/label"; // Make sure Label is imported
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/App"; // Import useAuth from App.tsx
 
-// Get the API URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const LoginPage = () => {
@@ -21,12 +22,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setIsAuthenticated } = useAuth(); // Get setIsAuthenticated from context
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await axios.post(`${API_BASE_URL}/auth/login`, {
-        // Use the environment variable
         username,
         password,
       });
@@ -34,7 +35,8 @@ const LoginPage = () => {
         title: "تم تسجيل الدخول بنجاح!",
         description: "أهلاً بك في لوحة التحكم.",
       });
-      navigate("/admin");
+      setIsAuthenticated(true); // Set authentication state to true
+      navigate("/admin"); // Navigate to admin dashboard
     } catch (error: any) {
       toast({
         title: "خطأ في تسجيل الدخول",
@@ -43,6 +45,7 @@ const LoginPage = () => {
         variant: "destructive",
       });
       console.error("Login error:", error.response?.data || error.message);
+      setIsAuthenticated(false); // Ensure state is false on error
     }
   };
 

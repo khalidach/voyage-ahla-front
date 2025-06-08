@@ -1,3 +1,4 @@
+// App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,38 +9,62 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import LoginPage from "./pages/LoginPage";
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react"; // Import createContext and useContext
 
 const queryClient = new QueryClient();
 
-// Get the API URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-// Configure axios to send cookies with all requests
 axios.defaults.withCredentials = true;
 
-// PrivateRoute component to protect routes
-const PrivateRoute = ({ children }: { children: JSX.Element }) => {
+// Create a context for authentication
+interface AuthContextType {
+  isAuthenticated: boolean;
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+  loadingAuth: boolean; // Add loading state to context
+}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await axios.post(`${API_BASE_URL}/auth/tokenIsValid`); // Use the environment variable
+        const res = await axios.post(`${API_BASE_URL}/auth/tokenIsValid`);
         setIsAuthenticated(res.data);
       } catch (error) {
         console.error("Token validation failed:", error);
         setIsAuthenticated(false);
       } finally {
-        setLoading(false);
+        setLoadingAuth(false);
       }
     };
     checkAuth();
-  }, []);
+  }, []); // Run only once on mount
 
-  if (loading) {
-    return <div>Loading authentication...</div>;
+  return (
+    <AuthContext.Provider
+      value={{ isAuthenticated, setIsAuthenticated, loadingAuth }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+const PrivateRoute = ({ children }: { children: JSX.Element }) => {
+  const { isAuthenticated, loadingAuth } = useAuth(); // Use auth from context
+
+  if (loadingAuth) {
+    return <div>Loading authentication...</div>; // Show loading indicator while checking auth
   }
 
   if (!isAuthenticated) {
@@ -54,19 +79,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/admin"
-            element={
-              <PrivateRoute>
-                <AdminDashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          {" "}
+          {/* Wrap routes with AuthProvider */}
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
