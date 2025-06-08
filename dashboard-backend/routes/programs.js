@@ -10,7 +10,7 @@ cloudinary.config({
 
 // --- GET ALL PROGRAMS ---
 router.route("/").get((req, res) => {
-  Program.find({}, { image: 0 })
+  Program.find({})
     .then((programs) => res.json(programs))
     .catch((err) => res.status(400).json("Error: " + err));
 });

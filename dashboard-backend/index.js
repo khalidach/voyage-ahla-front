@@ -47,8 +47,7 @@ app.use("/auth", authRouter);
 // Public route for fetching all programs (for the main site)
 // This route should come BEFORE the protected programsRouter
 app.get("/programs", (req, res) => {
-  Program.find()
-    .select("-image")
+  Program.find() // Modified: Removed .select("-image")
     .then((programs) => res.json(programs))
     .catch((err) => res.status(400).json("Error: " + err));
 });
