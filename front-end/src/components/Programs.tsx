@@ -125,6 +125,33 @@ const Programs = () => {
                       <Badge className="absolute top-3 right-3 bg-emerald-500 text-white font-semibold px-3 py-1 rounded-full">
                         {getProgramTypeLabel(program.program_type)}
                       </Badge>
+                      {/* DAYS & NIGHTS DISPLAY */}
+                      {firstTier && (
+                        <div className="absolute bottom-4 left-4 bg-black/70 text-white px-2 py-1 rounded text-sm">
+                          <span className="font-semibold">
+                            {firstTier.days > 0 &&
+                              (firstTier.days === 1
+                                ? "يوم"
+                                : firstTier.days === 2
+                                ? "يومين"
+                                : firstTier.days >= 3 && firstTier.days <= 10
+                                ? `${firstTier.days} أيام`
+                                : `${firstTier.days} يوم`)}
+                          </span>{" "}
+                          /{" "}
+                          <span className="font-semibold">
+                            {firstTier.nights > 0 &&
+                              (firstTier.nights === 1
+                                ? "ليلة"
+                                : firstTier.nights === 2
+                                ? "ليلتين"
+                                : firstTier.nights >= 3 &&
+                                  firstTier.nights <= 10
+                                ? `${firstTier.nights} ليالي`
+                                : `${firstTier.nights} ليلة`)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="p-6 flex flex-col flex-grow">
                       <h3 className="text-2xl font-bold text-gray-800 mb-3">
@@ -134,34 +161,25 @@ const Programs = () => {
                         {program.description}
                       </p>
 
-                      {/* DAYS & NIGHTS DISPLAY */}
-                      {firstTier && (
-                        <div className="text-gray-700 text-base mb-4">
-                          <span className="font-semibold">
-                            {firstTier.days} أيام
-                          </span>{" "}
-                          /{" "}
-                          <span className="font-semibold">
-                            {firstTier.nights} ليالي
-                          </span>
-                        </div>
-                      )}
-
                       {/* LOWEST PRICE DISPLAY */}
                       {lowestPrice !== null && (
-                        <div className="text-right mb-4">
-                          <span className="text-xl font-bold text-emerald-600">
-                            ابتداءً من {lowestPrice} درهم
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <Button
+                            onClick={() => openModal(program)}
+                            className="gold-gradient text-white hover:opacity-90"
+                          >
+                            عرض التفاصيل
+                          </Button>
+                          <div className="text-left">
+                            <span className="text-sm text-muted-foreground">
+                              يبدأ من
+                            </span>
+                            <div className="text-xl font-bold text-primary">
+                              {lowestPrice} درهم
+                            </div>
+                          </div>
                         </div>
                       )}
-
-                      <Button
-                        onClick={() => openModal(program)}
-                        className="w-full bg-gold-500 hover:bg-gold-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 font-semibold text-lg"
-                      >
-                        معرفة المزيد
-                      </Button>
                     </div>
                   </div>
                 );
