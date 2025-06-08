@@ -28,7 +28,7 @@ import { Trash2, PlusCircle, Upload } from "lucide-react";
 import type { Program, ProgramLocation } from "@/types/program";
 
 type ProgramFormData = Partial<Program> & {
-  imageFile?: File | null; // Add imageFile for file upload
+  imageFile?: File | null;
 };
 
 interface ProgramFormModalProps {
@@ -43,8 +43,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const initialFormData: ProgramFormData = {
   title: "",
   description: "",
-  image: "", // This will now store the URL
-  imageFile: null, // New field for the file object
+  image: "",
+  imageFile: null,
   program_type: "umrah",
   includes: [],
   locations: [],
@@ -68,9 +68,9 @@ const ProgramFormModal = ({
         const editableProgram = JSON.parse(JSON.stringify(programToEdit));
         setFormData({
           ...editableProgram,
-          imageFile: null, // Clear file on edit, user must re-select to change
+          imageFile: null,
         });
-        setImagePreview(editableProgram.image); // Display existing URL
+        setImagePreview(editableProgram.image);
       } else {
         setFormData(initialFormData);
         setImagePreview(null);
@@ -93,7 +93,6 @@ const ProgramFormModal = ({
     });
   };
 
-  // --- Location Handlers ---
   const addLocation = () =>
     updateNestedState((draft) => {
       draft.locations = [...(draft.locations || []), { name: "", label: "" }];
@@ -110,7 +109,6 @@ const ProgramFormModal = ({
     });
   };
 
-  // --- Tier Handlers ---
   const addTier = () =>
     updateNestedState((draft) => {
       const key = `new_tier_${Date.now()}`;
@@ -144,7 +142,6 @@ const ProgramFormModal = ({
     });
   };
 
-  // --- Hotel Handlers ---
   const addHotel = (tier: string, loc: string) =>
     updateNestedState((draft) => {
       const hotels = draft.packages?.[tier]?.location_hotels;
@@ -168,7 +165,6 @@ const ProgramFormModal = ({
         draft.packages[tier].location_hotels[loc].hotels[hIndex].name = name;
     });
 
-  // --- Pricing Combination Handlers ---
   const addCombination = (tier: string) =>
     updateNestedState((draft) => {
       const key = `new_combo_${Date.now()}`;
@@ -193,7 +189,6 @@ const ProgramFormModal = ({
       }
     });
 
-  // --- Room Price Handlers ---
   const addRoomPrice = (tier: string, comboKey: string) =>
     updateNestedState((draft) => {
       const key = `new_room_${Date.now()}`;
@@ -227,8 +222,8 @@ const ProgramFormModal = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, imageFile: file })); // Store the File object
-      setImagePreview(URL.createObjectURL(file)); // Create a local URL for preview
+      setFormData((prev) => ({ ...prev, imageFile: file }));
+      setImagePreview(URL.createObjectURL(file));
     } else {
       setFormData((prev) => ({ ...prev, imageFile: null }));
       setImagePreview(null);
@@ -239,7 +234,6 @@ const ProgramFormModal = ({
     e.preventDefault();
 
     const dataToSend = new FormData();
-    // Append fields to FormData. Stringify complex objects.
     dataToSend.append("title", formData.title || "");
     dataToSend.append("description", formData.description || "");
     dataToSend.append("program_type", formData.program_type || "umrah");
@@ -248,17 +242,17 @@ const ProgramFormModal = ({
     dataToSend.append("packages", JSON.stringify(formData.packages || {}));
 
     if (formData.imageFile) {
-      dataToSend.append("image", formData.imageFile); // Append the actual file
+      dataToSend.append("image", formData.imageFile);
     } else if (isEditing && formData.image) {
-      dataToSend.append("image", formData.image); // Send existing URL if no new file
+      dataToSend.append("image", formData.image);
     }
 
     try {
       const apiCall = isEditing
         ? axios.post(
             `${API_BASE_URL}/programs/update/${programToEdit!._id}`,
-            dataToSend, // Send FormData
-            { headers: { "Content-Type": "multipart/form-data" } } // Important for file uploads
+            dataToSend,
+            { headers: { "Content-Type": "multipart/form-data" } }
           )
         : axios.post(`${API_BASE_URL}/programs/add`, dataToSend, {
             headers: { "Content-Type": "multipart/form-data" },
@@ -269,7 +263,6 @@ const ProgramFormModal = ({
       onOpenChange(false);
     } catch (err) {
       console.error("Error saving program:", err);
-      // Optionally show a toast notification for error
     }
   };
 

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import ProgramModal from "./ProgramModal";
 import type { Program as ProgramType } from "../types/program";
 
-// Get the API URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Programs = () => {
@@ -15,8 +14,6 @@ const Programs = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Note: This endpoint '/programs/' now excludes the 'image' field for general listing
-    // The full program with image will be fetched when opening the modal.
     axios
       .get(`${API_BASE_URL}/programs/`)
       .then((response) => {
@@ -31,8 +28,6 @@ const Programs = () => {
   }, []);
 
   const openModal = (program: ProgramType) => {
-    // Fetch the full program details, including the image, when opening the modal
-    // This assumes your backend has a /programs/:id route that returns the full program
     axios
       .get(`${API_BASE_URL}/programs/${program._id}`)
       .then((response) => {
@@ -41,7 +36,6 @@ const Programs = () => {
       })
       .catch((error) => {
         console.error("Error fetching full program details:", error);
-        // Fallback to partial program if fetching full details fails
         setSelectedProgram(program);
         setIsModalOpen(true);
       });
@@ -76,10 +70,10 @@ const Programs = () => {
                 >
                   <div className="relative overflow-hidden">
                     <img
-                      src={program.image} // This will now be a Cloudinary URL
+                      src={program.image}
                       alt={program.title}
                       className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
-                      loading="lazy" // Add lazy loading here
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                   </div>
