@@ -27,7 +27,9 @@ import {
 import { Trash2, PlusCircle, Upload } from "lucide-react";
 import type { Program, ProgramLocation } from "@/types/program";
 
-type ProgramFormData = Partial<Program>;
+type ProgramFormData = Partial<Program> & {
+  imageFile?: File | null; // Add imageFile for file upload
+};
 
 interface ProgramFormModalProps {
   isOpen: boolean;
@@ -41,7 +43,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const initialFormData: ProgramFormData = {
   title: "",
   description: "",
-  image: "",
+  image: "", // This will now store the URL
+  imageFile: null, // New field for the file object
   program_type: "umrah",
   includes: [],
   locations: [],
@@ -63,8 +66,11 @@ const ProgramFormModal = ({
     if (isOpen) {
       if (isEditing && programToEdit) {
         const editableProgram = JSON.parse(JSON.stringify(programToEdit));
-        setFormData(editableProgram);
-        setImagePreview(editableProgram.image);
+        setFormData({
+          ...editableProgram,
+          imageFile: null, // Clear file on edit, user must re-select to change
+        });
+        setImagePreview(editableProgram.image); // Display existing URL
       } else {
         setFormData(initialFormData);
         setImagePreview(null);
@@ -220,30 +226,51 @@ const ProgramFormModal = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setFormData((prev) => ({ ...prev, image: base64String }));
-      setImagePreview(base64String);
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      setFormData((prev) => ({ ...prev, imageFile: file })); // Store the File object
+      setImagePreview(URL.createObjectURL(file)); // Create a local URL for preview
+    } else {
+      setFormData((prev) => ({ ...prev, imageFile: null }));
+      setImagePreview(null);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const apiCall = isEditing
-      ? axios.post(
-          `${API_BASE_URL}/programs/update/${programToEdit!._id}`,
-          formData
-        )
-      : axios.post(`${API_BASE_URL}/programs/add`, formData);
-    apiCall
-      .then(() => {
-        onProgramSaved();
-        onOpenChange(false);
-      })
-      .catch((err) => console.error("Error saving program:", err));
+
+    const dataToSend = new FormData();
+    // Append fields to FormData. Stringify complex objects.
+    dataToSend.append("title", formData.title || "");
+    dataToSend.append("description", formData.description || "");
+    dataToSend.append("program_type", formData.program_type || "umrah");
+    dataToSend.append("includes", JSON.stringify(formData.includes || []));
+    dataToSend.append("locations", JSON.stringify(formData.locations || []));
+    dataToSend.append("packages", JSON.stringify(formData.packages || {}));
+
+    if (formData.imageFile) {
+      dataToSend.append("image", formData.imageFile); // Append the actual file
+    } else if (isEditing && formData.image) {
+      dataToSend.append("image", formData.image); // Send existing URL if no new file
+    }
+
+    try {
+      const apiCall = isEditing
+        ? axios.post(
+            `${API_BASE_URL}/programs/update/${programToEdit!._id}`,
+            dataToSend, // Send FormData
+            { headers: { "Content-Type": "multipart/form-data" } } // Important for file uploads
+          )
+        : axios.post(`${API_BASE_URL}/programs/add`, dataToSend, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+
+      await apiCall;
+      onProgramSaved();
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Error saving program:", err);
+      // Optionally show a toast notification for error
+    }
   };
 
   return (

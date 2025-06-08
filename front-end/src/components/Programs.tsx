@@ -15,8 +15,10 @@ const Programs = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
+    // Note: This endpoint '/programs/' now excludes the 'image' field for general listing
+    // The full program with image will be fetched when opening the modal.
     axios
-      .get(`${API_BASE_URL}/programs/`) // Use the environment variable
+      .get(`${API_BASE_URL}/programs/`)
       .then((response) => {
         setPrograms(response.data);
       })
@@ -29,8 +31,20 @@ const Programs = () => {
   }, []);
 
   const openModal = (program: ProgramType) => {
-    setSelectedProgram(program);
-    setIsModalOpen(true);
+    // Fetch the full program details, including the image, when opening the modal
+    // This assumes your backend has a /programs/:id route that returns the full program
+    axios
+      .get(`${API_BASE_URL}/programs/${program._id}`)
+      .then((response) => {
+        setSelectedProgram(response.data);
+        setIsModalOpen(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching full program details:", error);
+        // Fallback to partial program if fetching full details fails
+        setSelectedProgram(program);
+        setIsModalOpen(true);
+      });
   };
 
   const closeModal = () => {
@@ -62,9 +76,10 @@ const Programs = () => {
                 >
                   <div className="relative overflow-hidden">
                     <img
-                      src={program.image}
+                      src={program.image} // This will now be a Cloudinary URL
                       alt={program.title}
                       className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
+                      loading="lazy" // Add lazy loading here
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                   </div>

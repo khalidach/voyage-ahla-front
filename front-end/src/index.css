@@ -2,8 +2,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* Corrected font name from "Cairp" to "Cairo" */
 * {
-  font-family: "Cairp", sans-serif;
+  font-family: "Cairo", sans-serif; /* Corrected line */
 }
 @layer base {
   :root {

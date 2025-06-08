@@ -34,7 +34,7 @@ export interface Program {
   _id: string; // From MongoDB
   title: string;
   description: string;
-  image: string;
+  image: string; // Now explicitly a URL
   program_type: "umrah" | "tourism" | "other";
   locations: ProgramLocation[];
   packages: {

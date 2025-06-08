@@ -34,8 +34,8 @@ const programSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
-    // Image will be stored as a Base64 string
-    image: { type: String, required: true },
+    // Image will be stored as a URL from Cloudinary
+    image: { type: String, required: true }, // Keep as String, but now it's a URL
     program_type: {
       type: String,
       required: true,
