@@ -610,6 +610,20 @@ const ProgramFormModal = ({
                                     }
                                     placeholder="السعر"
                                   />
+                                  <Input // ADDED DAYS INPUT
+                                    type="number"
+                                    value={tierData.days || ""} // MODIFIED THIS LINE: Ensure value is a string, even if tierData.days is 0, null, or undefined
+                                    onChange={(e) =>
+                                      handleTierChange(
+                                        tierName,
+                                        "days",
+                                        e.target.value
+                                      )
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder="الأيام"
+                                    className="w-24"
+                                  />
                                   <Button
                                     type="button"
                                     variant="ghost"
