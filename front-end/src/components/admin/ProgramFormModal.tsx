@@ -164,16 +164,55 @@ const ProgramFormModal = ({
     updateNestedState((draft) => {
       draft.packages?.[tier]?.location_hotels?.[loc]?.hotels.splice(hIndex, 1);
     });
+
   const handleHotelChange = (
     tier: string,
     loc: string,
     hIndex: number,
-    name: string
-  ) =>
+    newName: string
+  ) => {
     updateNestedState((draft) => {
-      if (draft.packages?.[tier]?.location_hotels?.[loc]?.hotels[hIndex])
-        draft.packages[tier].location_hotels[loc].hotels[hIndex].name = name;
+      const hotelToUpdate =
+        draft.packages?.[tier]?.location_hotels?.[loc]?.hotels?.[hIndex];
+      if (!hotelToUpdate) return;
+
+      const oldName = hotelToUpdate.name;
+      if (oldName === newName || !oldName) {
+        hotelToUpdate.name = newName;
+        return;
+      }
+
+      hotelToUpdate.name = newName;
+
+      const pricingCombinations = draft.packages?.[tier]?.pricing_combinations;
+      if (!pricingCombinations) return;
+
+      const locationIndex = draft.locations.findIndex((l) => l.name === loc);
+      if (locationIndex === -1) return;
+
+      const keysToUpdate = Object.keys(pricingCombinations);
+
+      for (const key of keysToUpdate) {
+        const keySegments = key.split("_");
+        if (keySegments.length !== draft.locations.length) continue;
+
+        const hotelsInSegment = keySegments[locationIndex].split(",");
+        const hotelIndexInKey = hotelsInSegment.indexOf(oldName);
+
+        if (hotelIndexInKey !== -1) {
+          hotelsInSegment[hotelIndexInKey] = newName;
+          keySegments[locationIndex] = hotelsInSegment.join(",");
+          const newKey = keySegments.join("_");
+
+          if (newKey !== key) {
+            const value = pricingCombinations[key];
+            delete pricingCombinations[key];
+            pricingCombinations[newKey] = value;
+          }
+        }
+      }
     });
+  };
 
   const addCombination = (tier: string) =>
     updateNestedState((draft) => {
