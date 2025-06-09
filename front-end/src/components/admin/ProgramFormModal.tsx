@@ -548,38 +548,28 @@ const ProgramFormModal = ({
     );
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
-    // --- Image Handling Fix ---
-    // Make sure formData.imageFile is indeed a File object when selected
     if (formData.imageFile instanceof File) {
       dataToSend.append("imageFile", formData.imageFile);
     } else if (typeof formData.image === "string" && formData.image !== "") {
       dataToSend.append("image", formData.image);
     } else {
-      dataToSend.append("image", ""); // Send empty string if no image and not editing
+      dataToSend.append("image", "");
     }
-    // --- End Image Handling Fix ---
 
     try {
+      // THE FIX IS HERE: Removed the explicit headers object
       const apiCall = isEditing
         ? axios.post(
             `${API_BASE_URL}/programs/update/${programToEdit!._id}`,
-            dataToSend,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            dataToSend
           )
-        : axios.post(`${API_BASE_URL}/programs/add`, dataToSend, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
+        : axios.post(`${API_BASE_URL}/programs/add`, dataToSend);
+
       await apiCall;
       onProgramSaved();
       onOpenChange(false);
     } catch (err) {
       console.error("Error saving program:", err);
-      // Optional: Add a toast notification for the user
-      // toast({
-      //   title: "Failed to save program",
-      //   description: "Please try again. Check console for details.",
-      //   variant: "destructive",
-      // });
     }
   };
 
