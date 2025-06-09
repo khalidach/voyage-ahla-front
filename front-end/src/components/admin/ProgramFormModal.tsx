@@ -67,7 +67,7 @@ const initialFormData: ProgramFormData = {
   packages: [],
 };
 
-const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"];
+const defaultRoomTypes = ["خماسية", "رباعية", "ثلاثية", "ثنائية"];
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
@@ -552,7 +552,7 @@ const ProgramFormModal = ({
                       />
                       <Input
                         type="number"
-                        value={tier.nights}
+                        value={tier.nights || ""}
                         onChange={(e) =>
                           handleTierChange(
                             tier.id,
@@ -676,7 +676,7 @@ const ProgramFormModal = ({
                                   />
                                   <Input
                                     type="number"
-                                    value={room.price}
+                                    value={room.price || ""}
                                     onChange={(e) =>
                                       handleRoomPriceChange(
                                         tier.id,
@@ -706,7 +706,7 @@ const ProgramFormModal = ({
                                 size="sm"
                                 onClick={() => addRoomPrice(tier.id, key)}
                               >
-                                إضافة سعر غرفة
+                                إضافة غرفة
                               </Button>
                             </div>
                           </div>
