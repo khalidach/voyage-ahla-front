@@ -490,8 +490,6 @@ const ProgramFormModal = ({
       setImagePreview(URL.createObjectURL(file));
     } else {
       setFormData((prev) => ({ ...prev, imageFile: null })); // Keep existing image URL if no new file
-      // If no file is selected, but there was an existing image, imagePreview should reflect that.
-      // If there was no existing image, it will remain null.
     }
   };
 
@@ -539,20 +537,12 @@ const ProgramFormModal = ({
     );
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
-    // CRITICAL PART: Ensure either a File or a string URL is sent, never an object.
+    // ⭐️ UPDATED LOGIC HERE ⭐️
+    // Use a different name for the file upload to avoid conflicts
     if (formData.imageFile) {
-      // If a new file was selected
-      dataToSend.append("image", formData.imageFile);
+      dataToSend.append("imageFile", formData.imageFile);
     } else if (formData.image && typeof formData.image === "string") {
-      // If no new file, but an existing image URL string is present
       dataToSend.append("image", formData.image);
-    } else {
-      // Handle cases where no image is provided or it's an invalid type
-      // You might want to display a toast error here for the user
-      // Or set a default image on the backend.
-      console.error("No image selected or invalid image type for submission.");
-      // For now, it will send an empty string if no file and no string image
-      dataToSend.append("image", "");
     }
 
     try {
@@ -570,7 +560,6 @@ const ProgramFormModal = ({
       onOpenChange(false);
     } catch (err) {
       console.error("Error saving program:", err);
-      // You should add toast notifications for success/failure here for the user
     }
   };
 

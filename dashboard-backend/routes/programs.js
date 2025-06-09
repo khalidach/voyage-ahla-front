@@ -38,14 +38,12 @@ const uploadImage = async (file) => {
 router.route("/add").post(async (req, res) => {
   try {
     let imageUrl = "";
-    if (req.files && req.files.image) {
-      // Prioritize file upload via express-fileupload
-      imageUrl = await uploadImage(req.files.image);
+    // ⭐️ UPDATED LOGIC HERE ⭐️
+    if (req.files && req.files.imageFile) {
+      imageUrl = await uploadImage(req.files.imageFile);
     } else if (req.body.image && typeof req.body.image === "string") {
-      // If no file, but a string URL is provided
       imageUrl = req.body.image;
     } else {
-      // If neither a file nor a string URL is provided, it's an error
       return res
         .status(400)
         .json("Error: Image is required or invalid format.");
@@ -108,8 +106,9 @@ router.route("/update/:id").post(async (req, res) => {
     if (!program) return res.status(404).json("Program not found.");
 
     let imageUrl = program.image;
-    if (req.files && req.files.image) {
-      imageUrl = await uploadImage(req.files.image);
+    // ⭐️ UPDATED LOGIC HERE ⭐️
+    if (req.files && req.files.imageFile) {
+      imageUrl = await uploadImage(req.files.imageFile);
     } else if (req.body.image && typeof req.body.image === "string") {
       imageUrl = req.body.image;
     }
