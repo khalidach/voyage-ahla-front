@@ -66,6 +66,8 @@ const ProgramList = () => {
         return "عمرة";
       case "tourism":
         return "سياحة";
+      case "hajj":
+        return "حج";
       default:
         return "آخر";
     }
