@@ -1,5 +1,4 @@
 // front-end/src/components/admin/ProgramFormModal.tsx
-// Add 'File' import for instanceof check
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -495,7 +494,13 @@ const ProgramFormModal = ({
       setFormData((prev) => ({ ...prev, imageFile: file, image: "" })); // Clear image URL if a new file is selected
       setImagePreview(URL.createObjectURL(file));
     } else {
-      setFormData((prev) => ({ ...prev, imageFile: null })); // Keep existing image URL if no new file
+      // Keep previous image state if no new file is selected, or clear if it was a file previously
+      setFormData((prev) => ({
+        ...prev,
+        imageFile: null,
+        image: programToEdit?.image || "", // Revert to original image URL if editing and no new file, otherwise empty
+      }));
+      setImagePreview(programToEdit?.image || null); // Revert preview
     }
   };
 
@@ -544,28 +549,13 @@ const ProgramFormModal = ({
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
     // --- Image Handling Fix ---
-    console.log("Frontend - FormData before appending image:");
-    console.log("  formData.imageFile:", formData.imageFile);
-    console.log(
-      "  formData.image:",
-      formData.image,
-      "Type:",
-      typeof formData.image
-    );
-
+    // Make sure formData.imageFile is indeed a File object when selected
     if (formData.imageFile instanceof File) {
-      // If a new image file is selected, append it.
       dataToSend.append("imageFile", formData.imageFile);
-      // It's crucial not to send the 'image' field if a new file is being uploaded,
-      // to avoid any ambiguity or unintended parsing on the backend.
     } else if (typeof formData.image === "string" && formData.image !== "") {
-      // If no new file is selected, and there's an existing image URL string,
-      // append it as the 'image' field for the backend to use.
       dataToSend.append("image", formData.image);
     } else {
-      // This case handles new programs without an image, or when an image is removed.
-      // Append an empty string for 'image' to ensure the field exists in the form data.
-      dataToSend.append("image", "");
+      dataToSend.append("image", ""); // Send empty string if no image and not editing
     }
     // --- End Image Handling Fix ---
 
