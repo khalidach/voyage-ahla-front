@@ -10,7 +10,13 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Helper function remains the same
+// --- GET ALL PROGRAMS ---
+router.route("/").get((req, res) => {
+  Program.find({})
+    .then((programs) => res.json(programs))
+    .catch((err) => res.status(400).json("Error: " + err));
+});
+
 const uploadImage = async (file) => {
   try {
     const result = await cloudinary.uploader.upload(file.tempFilePath, {
@@ -21,7 +27,7 @@ const uploadImage = async (file) => {
         { quality: "auto:low" },
       ],
     });
-    return result.secure_url; // This returns a string
+    return result.secure_url;
   } catch (error) {
     console.error("Cloudinary upload error:", error);
     throw new Error("Failed to upload image to Cloudinary.");
@@ -31,18 +37,13 @@ const uploadImage = async (file) => {
 // --- ADD NEW PROGRAM ---
 router.route("/add").post(async (req, res) => {
   try {
-    // --- ADDED CONSOLE LOGS FOR DEBUGGING ---
-    console.log("Backend /programs/add: req.body", req.body);
-    console.log("Backend /programs/add: req.files", req.files);
-    // --- END DEBUG LOGS ---
-
     let imageUrl = "";
+    // ⭐️ UPDATED LOGIC HERE ⭐️
     if (req.files && req.files.imageFile) {
       imageUrl = await uploadImage(req.files.imageFile);
     } else if (req.body.image && typeof req.body.image === "string") {
       imageUrl = req.body.image;
     } else {
-      // If no file and no valid image string, return an error for 'add' operation
       return res
         .status(400)
         .json("Error: Image is required or invalid format.");
@@ -59,21 +60,18 @@ router.route("/add").post(async (req, res) => {
       nights,
     } = req.body;
 
-    // These fields are expected to be JSON stringified from the frontend
-    const parsedLocations = JSON.parse(locations);
     const parsedPackages = JSON.parse(packages);
-    const parsedIncludes = JSON.parse(includes);
 
     const newProgram = new Program({
       title,
       description,
       image: imageUrl,
       program_type,
-      days: Number(days), // Ensure days and nights are numbers
-      nights: Number(nights), // Ensure days and nights are numbers
-      locations: parsedLocations,
+      days,
+      nights,
+      locations: JSON.parse(locations),
       packages: parsedPackages,
-      includes: parsedIncludes,
+      includes: JSON.parse(includes),
     });
 
     await newProgram.save();
@@ -84,33 +82,43 @@ router.route("/add").post(async (req, res) => {
   }
 });
 
+// --- GET PROGRAM BY ID ---
+router.route("/:id").get((req, res) => {
+  Program.findById(req.params.id)
+    .then((program) => {
+      if (!program) return res.status(404).json("Program not found.");
+      res.json(program);
+    })
+    .catch((err) => res.status(400).json("Error: " + err));
+});
+
+// --- DELETE PROGRAM BY ID ---
+router.route("/:id").delete((req, res) => {
+  Program.findByIdAndDelete(req.params.id)
+    .then(() => res.json("Program deleted."))
+    .catch((err) => res.status(400).json("Error: " + err));
+});
+
 // --- UPDATE PROGRAM BY ID ---
 router.route("/update/:id").post(async (req, res) => {
   try {
-    // --- ADDED CONSOLE LOGS FOR DEBUGGING ---
-    console.log("Backend /programs/update: req.body", req.body);
-    console.log("Backend /programs/update: req.files", req.files);
-    // --- END DEBUG LOGS ---
-
     const program = await Program.findById(req.params.id);
     if (!program) return res.status(404).json("Program not found.");
 
-    let imageUrl = program.image; // Start with the existing image URL from the database
+    let imageUrl = program.image;
+    // ⭐️ UPDATED LOGIC HERE ⭐️
     if (req.files && req.files.imageFile) {
-      // If a new file is uploaded, process it
       imageUrl = await uploadImage(req.files.imageFile);
     } else if (req.body.image && typeof req.body.image === "string") {
-      // If no new file, use the image string from the body (which might be the original URL or an empty string if removed)
       imageUrl = req.body.image;
     }
-    // If neither a new file nor a string in req.body.image, imageUrl remains the original program.image.
 
     program.title = req.body.title;
     program.description = req.body.description;
-    program.image = imageUrl; // Update the image with the new or existing URL
+    program.image = imageUrl;
     program.program_type = req.body.program_type;
-    program.days = Number(req.body.days); // Ensure days and nights are numbers
-    program.nights = Number(req.body.nights); // Ensure days and nights are numbers
+    program.days = req.body.days;
+    program.nights = req.body.nights;
     program.locations = JSON.parse(req.body.locations);
     program.packages = JSON.parse(req.body.packages);
     program.includes = JSON.parse(req.body.includes);
