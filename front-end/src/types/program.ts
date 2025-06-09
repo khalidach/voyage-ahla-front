@@ -38,7 +38,7 @@ export interface Program {
   title: string;
   description: string;
   image: string; // Now explicitly a URL
-  program_type: "umrah" | "tourism" | "other";
+  program_type: "umrah" | "tourism" | "hajj" | "other";
   days: number; // ADDED
   nights: number; // ADDED
   locations: ProgramLocation[];

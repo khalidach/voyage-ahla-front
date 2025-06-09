@@ -39,7 +39,7 @@ const programSchema = new Schema(
     program_type: {
       type: String,
       required: true,
-      enum: ["umrah", "tourism", "other"],
+      enum: ["umrah", "tourism", "hajj", "other"],
     },
     days: { type: Number, required: true }, // ADDED HERE
     nights: { type: Number, required: true }, // ADDED HERE
