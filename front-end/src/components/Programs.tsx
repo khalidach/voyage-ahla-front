@@ -1,11 +1,34 @@
+// front-end/src/components/Programs.tsx
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ProgramModal from "./ProgramModal";
 import type { Program as ProgramType } from "../types/program";
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+// Skeleton component for a single program card
+const ProgramCardSkeleton = () => (
+  <div className="bg-white rounded-xl overflow-hidden shadow-lg flex flex-col">
+    <Skeleton className="w-full h-64" />
+    <div className="p-3 md:p-6 flex flex-col flex-grow">
+      <Skeleton className="h-8 w-3/4 mb-3" />
+      <Skeleton className="h-4 w-full mb-1" />
+      <Skeleton className="h-4 w-full mb-1" />
+      <Skeleton className="h-4 w-2/3 mb-4" />
+      <div className="flex items-center justify-between mt-auto">
+        <Skeleton className="h-10 w-28" />
+        <div className="text-left">
+          <Skeleton className="h-4 w-16 mb-1" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const Programs = () => {
   const [programs, setPrograms] = useState<ProgramType[]>([]);
@@ -13,8 +36,10 @@ const Programs = () => {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true); // <-- Added loading state
 
   useEffect(() => {
+    setLoading(true); // Start with loading true
     axios
       .get(`${API_BASE_URL}/programs/`)
       .then((response) => {
@@ -25,6 +50,9 @@ const Programs = () => {
           "There was an error fetching the programs for the main site!",
           error
         );
+      })
+      .finally(() => {
+        setLoading(false); // Set loading to false after fetch completes
       });
   }, []);
 
@@ -37,6 +65,7 @@ const Programs = () => {
       })
       .catch((error) => {
         console.error("Error fetching full program details:", error);
+        // Fallback to the program data if detailed fetch fails
         setSelectedProgram(program);
         setIsModalOpen(true);
       });
@@ -58,21 +87,16 @@ const Programs = () => {
     }
   };
 
-  // Function to calculate the lowest price
   const getLowestPrice = (program: ProgramType): number | null => {
     let lowestPrice: number | null = null;
-
     for (const tierName in program.packages) {
       if (Object.hasOwn(program.packages, tierName)) {
-        // Changed hasOwnProperty
         const tier = program.packages[tierName];
         for (const comboKey in tier.pricing_combinations) {
           if (Object.hasOwn(tier.pricing_combinations, comboKey)) {
-            // Changed hasOwnProperty
             const prices = tier.pricing_combinations[comboKey];
             for (const roomType in prices) {
               if (Object.hasOwn(prices, roomType)) {
-                // Changed hasOwnProperty
                 const price = prices[roomType];
                 if (lowestPrice === null || price < lowestPrice) {
                   lowestPrice = price;
@@ -101,10 +125,14 @@ const Programs = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {programs.length > 0 ? (
+            {loading ? (
+              // Render 3 skeleton cards while loading
+              Array.from({ length: 3 }).map((_, index) => (
+                <ProgramCardSkeleton key={index} />
+              ))
+            ) : programs.length > 0 ? (
               programs.map((program, index) => {
                 const lowestPrice = getLowestPrice(program);
-
                 return (
                   <div
                     key={program._id}
@@ -119,12 +147,9 @@ const Programs = () => {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-
-                      {/* PROGRAM TYPE BADGE */}
                       <Badge className="absolute top-3 right-3 bg-emerald-500 text-white font-semibold px-3 py-1 rounded-full">
                         {getProgramTypeLabel(program.program_type)}
                       </Badge>
-                      {/* DAYS & NIGHTS DISPLAY */}
                       {program.days > 0 && program.nights > 0 && (
                         <div className="absolute bottom-4 left-4 bg-black/70 text-white px-2 py-1 rounded text-sm">
                           <span className="font-semibold">
@@ -156,8 +181,6 @@ const Programs = () => {
                       <p className="text-gray-600 mb-4 leading-relaxed flex-grow">
                         {program.description}
                       </p>
-
-                      {/* LOWEST PRICE DISPLAY */}
                       {lowestPrice !== null && (
                         <div className="flex items-center justify-between">
                           <Button
