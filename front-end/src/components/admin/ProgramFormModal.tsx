@@ -30,6 +30,7 @@ import type {
   ProgramLocation,
   PackageTier,
   Pricing,
+  Hotel, // Import Hotel
 } from "@/types/program";
 
 // Internal state types to ensure stable keys
@@ -41,14 +42,18 @@ type FormPackageTier = Omit<PackageTier, "pricing_combinations"> & {
   pricing_combinations: FormPricingCombination;
 };
 
+// Define FormLocation type with client-side ID
+type FormLocation = ProgramLocation & { id: string };
+
 type ProgramFormData = Omit<
   Partial<Program>,
-  "packages" | "days" | "nights"
+  "packages" | "days" | "nights" | "locations" // Exclude original locations
 > & {
   imageFile?: File | null;
   packages?: FormPackageTier[];
   days?: number;
   nights?: number;
+  locations?: FormLocation[]; // Use FormLocation type
 };
 
 interface ProgramFormModalProps {
@@ -69,11 +74,11 @@ const initialFormData: ProgramFormData = {
   days: 0,
   nights: 0,
   includes: [],
-  locations: [],
+  locations: [], // Initialize as empty array of FormLocation
   packages: [],
 };
 
-const defaultRoomTypes = ["خماسية", "رباعية", "ثلاثية", "ثنائية"];
+const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"]; // Use internal names for sorting
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
@@ -104,6 +109,119 @@ const ProgramFormModal = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = !!programToEdit;
 
+  // State for drag and drop
+  const [draggedItem, setDraggedItem] = useState<{
+    type: "location" | "tier" | "hotel" | "roomPrice";
+    index: number;
+    tierId?: string;
+    locationName?: string;
+    comboKey?: string;
+  } | null>(null);
+
+  // Helper to reorder arrays
+  const reorderArray = (list: any[], startIndex: number, endIndex: number) => {
+    const result = Array.from(list);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    return result;
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (
+    e: React.DragEvent<HTMLElement>,
+    type: "location" | "tier" | "hotel" | "roomPrice",
+    index: number,
+    tierId?: string,
+    locationName?: string,
+    comboKey?: string
+  ) => {
+    setDraggedItem({ type, index, tierId, locationName, comboKey });
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString()); // For Firefox compatibility
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (
+    e: React.DragEvent<HTMLElement>,
+    dropIndex: number,
+    dropTargetType: "location" | "tier" | "hotel" | "roomPrice",
+    targetTierId?: string,
+    targetLocationName?: string,
+    targetComboKey?: string
+  ) => {
+    e.preventDefault();
+
+    if (!draggedItem || draggedItem.type !== dropTargetType) {
+      setDraggedItem(null);
+      return;
+    }
+
+    const { type, index: startIndex } = draggedItem;
+
+    if (startIndex === dropIndex) {
+      setDraggedItem(null);
+      return;
+    }
+
+    updateNestedState((draft) => {
+      switch (type) {
+        case "location":
+          if (draft.locations) {
+            draft.locations = reorderArray(
+              draft.locations,
+              startIndex,
+              dropIndex
+            );
+          }
+          break;
+        case "tier":
+          if (draft.packages) {
+            draft.packages = reorderArray(
+              draft.packages,
+              startIndex,
+              dropIndex
+            );
+          }
+          break;
+        case "hotel":
+          if (draggedItem.tierId && draggedItem.locationName) {
+            const tier = draft.packages?.find(
+              (t) => t.id === draggedItem.tierId
+            );
+            if (tier?.location_hotels?.[draggedItem.locationName]?.hotels) {
+              tier.location_hotels[draggedItem.locationName].hotels =
+                reorderArray(
+                  tier.location_hotels[draggedItem.locationName].hotels,
+                  startIndex,
+                  dropIndex
+                );
+            }
+          }
+          break;
+        case "roomPrice":
+          if (draggedItem.tierId && draggedItem.comboKey) {
+            const tier = draft.packages?.find(
+              (t) => t.id === draggedItem.tierId
+            );
+            if (tier?.pricing_combinations?.[draggedItem.comboKey]) {
+              tier.pricing_combinations[draggedItem.comboKey] = reorderArray(
+                tier.pricing_combinations[draggedItem.comboKey],
+                startIndex,
+                dropIndex
+              );
+            }
+          }
+          break;
+      }
+    });
+
+    setDraggedItem(null);
+  };
+
   // Effect to transform initial program data into a stable state structure for the form
   useEffect(() => {
     if (isOpen) {
@@ -128,21 +246,40 @@ const ProgramFormModal = ({
 
             formPricingCombinations[key] = roomEntries.map(
               ([roomName, price]) => ({
-                id: `room_${Math.random()}`,
+                id: `room_${Date.now()}_${Math.random()}`, // Assign unique ID
                 name: roomName,
                 price,
               })
             );
           }
           return {
-            id: `tier_${Math.random()}`,
+            id: `tier_${Date.now()}_${Math.random()}`, // Assign unique ID
             name,
             ...tierData,
+            // Ensure location_hotels also has client-side IDs for its hotels
+            location_hotels: Object.fromEntries(
+              Object.entries(tierData.location_hotels || {}).map(
+                ([locName, locData]) => [
+                  locName,
+                  {
+                    hotels: locData.hotels.map((h) => ({
+                      ...h,
+                      id: `hotel_${Date.now()}_${Math.random()}`, // Assign unique ID
+                    })),
+                  },
+                ]
+              )
+            ),
             pricing_combinations: formPricingCombinations,
           };
         });
         setFormData({
           ...programToEdit,
+          // Assign unique IDs to existing locations
+          locations: programToEdit.locations.map((loc) => ({
+            ...loc,
+            id: `loc_${Date.now()}_${Math.random()}`,
+          })),
           packages: packagesArray,
           imageFile: null,
         });
@@ -169,7 +306,7 @@ const ProgramFormModal = ({
             newCombinations[key] = existingCombinations[key];
           } else {
             newCombinations[key] = defaultRoomTypes.map((roomName) => ({
-              id: `room_${Math.random()}`,
+              id: `room_${Date.now()}_${Math.random()}`, // Ensure new rooms get ID
               name: roomName,
               price: 0,
             }));
@@ -200,23 +337,31 @@ const ProgramFormModal = ({
 
   const addLocation = () =>
     updateNestedState((draft) => {
-      draft.locations = [...(draft.locations || []), { name: "", label: "" }];
+      draft.locations = [
+        ...(draft.locations || []),
+        { id: `loc_${Date.now()}_${Math.random()}`, name: "", label: "" },
+      ];
     });
-  const removeLocation = (index: number) =>
-    updateNestedState((draft) => draft.locations?.splice(index, 1));
+  const removeLocation = (id: string) =>
+    updateNestedState((draft) => {
+      draft.locations = draft.locations?.filter((loc) => loc.id !== id);
+    });
   const handleLocationChange = (
-    index: number,
+    id: string,
     field: keyof ProgramLocation,
     value: string
   ) =>
     updateNestedState((draft) => {
-      if (draft.locations) draft.locations[index][field] = value;
+      const location = draft.locations?.find((loc) => loc.id === id);
+      if (location) {
+        location[field] = value;
+      }
     });
 
   const addTier = () =>
     updateNestedState((draft) => {
       const newTier: FormPackageTier = {
-        id: `tier_${Date.now()}`,
+        id: `tier_${Date.now()}_${Math.random()}`,
         name: `new_tier_${(draft.packages?.length || 0) + 1}`,
         location_hotels: {},
         pricing_combinations: {},
@@ -244,26 +389,36 @@ const ProgramFormModal = ({
         if (!tier.location_hotels) tier.location_hotels = {};
         if (!tier.location_hotels[locName])
           tier.location_hotels[locName] = { hotels: [] };
-        tier.location_hotels[locName].hotels.push({ name: "" });
+        tier.location_hotels[locName].hotels.push({
+          id: `hotel_${Date.now()}_${Math.random()}`,
+          name: "",
+        });
       }
     });
 
-  const removeHotel = (tierId: string, locName: string, hIndex: number) =>
+  const removeHotel = (tierId: string, locName: string, hotelId: string) =>
     updateNestedState((draft) => {
       const tier = draft.packages?.find((t) => t.id === tierId);
-      if (tier) tier.location_hotels?.[locName]?.hotels.splice(hIndex, 1);
+      if (tier?.location_hotels?.[locName]?.hotels) {
+        tier.location_hotels[locName].hotels = tier.location_hotels[
+          locName
+        ].hotels.filter((h) => h.id !== hotelId);
+      }
     });
 
   const handleHotelChange = (
     tierId: string,
     locName: string,
-    hIndex: number,
+    hotelId: string,
     name: string
   ) =>
     updateNestedState((draft) => {
       const tier = draft.packages?.find((t) => t.id === tierId);
-      if (tier?.location_hotels?.[locName]?.hotels[hIndex]) {
-        tier.location_hotels[locName].hotels[hIndex].name = name;
+      const hotel = tier?.location_hotels?.[locName]?.hotels.find(
+        (h) => h.id === hotelId
+      );
+      if (hotel) {
+        hotel.name = name;
       }
     });
 
@@ -272,7 +427,7 @@ const ProgramFormModal = ({
       const tier = draft.packages?.find((t) => t.id === tierId);
       if (tier?.pricing_combinations?.[comboKey]) {
         tier.pricing_combinations[comboKey].push({
-          id: `room_${Date.now()}`,
+          id: `room_${Date.now()}_${Math.random()}`,
           name: "new_room",
           price: 0,
         });
@@ -327,7 +482,7 @@ const ProgramFormModal = ({
       [tierName: string]: Omit<PackageTier, "name" | "id">;
     } = {};
     formData.packages?.forEach((formTier) => {
-      const { id, name, ...tierData } = formTier;
+      const { id, name, ...tierData } = formTier; // Destructure `id` as it's client-side only
       const apiPricingCombinations: { [key: string]: Pricing } = {};
       for (const comboKey in tierData.pricing_combinations) {
         apiPricingCombinations[comboKey] = tierData.pricing_combinations[
@@ -339,6 +494,15 @@ const ProgramFormModal = ({
       }
       packagesForApi[name] = {
         ...tierData,
+        // Remove client-side `id` from hotels when sending to API
+        location_hotels: Object.fromEntries(
+          Object.entries(tierData.location_hotels || {}).map(
+            ([locName, locData]) => [
+              locName,
+              { hotels: locData.hotels.map(({ id, ...rest }) => rest) }, // Exclude `id`
+            ]
+          )
+        ),
         pricing_combinations: apiPricingCombinations,
       };
     });
@@ -350,7 +514,11 @@ const ProgramFormModal = ({
     dataToSend.append("days", String(formData.days || 0));
     dataToSend.append("nights", String(formData.nights || 0));
     dataToSend.append("includes", JSON.stringify(formData.includes || []));
-    dataToSend.append("locations", JSON.stringify(formData.locations || []));
+    // Remove client-side `id` from locations when sending to API
+    dataToSend.append(
+      "locations",
+      JSON.stringify(formData.locations?.map(({ id, ...rest }) => rest) || [])
+    );
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
     if (formData.imageFile) {
@@ -501,18 +669,25 @@ const ProgramFormModal = ({
                 </div>
                 <div className="space-y-2">
                   {formData.locations?.map((loc, index) => (
-                    <div key={index} className="flex items-center gap-2">
+                    <div
+                      key={loc.id} // Use stable ID
+                      draggable="true"
+                      onDragStart={(e) => handleDragStart(e, "location", index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index, "location")}
+                      className="flex items-center gap-2 p-1 border rounded-md bg-white cursor-grab active:cursor-grabbing"
+                    >
                       <Input
                         value={loc.name}
                         onChange={(e) =>
-                          handleLocationChange(index, "name", e.target.value)
+                          handleLocationChange(loc.id, "name", e.target.value)
                         }
                         placeholder="name (english)"
                       />
                       <Input
                         value={loc.label}
                         onChange={(e) =>
-                          handleLocationChange(index, "label", e.target.value)
+                          handleLocationChange(loc.id, "label", e.target.value)
                         }
                         placeholder="Label (arabic)"
                       />
@@ -520,7 +695,7 @@ const ProgramFormModal = ({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeLocation(index)}
+                        onClick={() => removeLocation(loc.id)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
@@ -559,11 +734,15 @@ const ProgramFormModal = ({
               </Button>
             </div>
             <Accordion type="multiple" className="w-full">
-              {formData.packages?.map((tier) => (
+              {formData.packages?.map((tier, index) => (
                 <AccordionItem
                   value={tier.id}
                   key={tier.id}
-                  className="bg-gray-50 rounded-lg mb-2 border"
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, "tier", index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index, "tier")}
+                  className="bg-gray-50 rounded-lg mb-2 border cursor-grab active:cursor-grabbing"
                 >
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center gap-2 flex-grow">
@@ -592,7 +771,7 @@ const ProgramFormModal = ({
                     <div className="p-3 bg-white rounded border space-y-2">
                       <Label className="font-semibold">الفنادق في الباقة</Label>
                       {formData.locations?.map((loc) => (
-                        <div key={loc.name} className="p-2 border-t">
+                        <div key={loc.id} className="p-2 border-t">
                           <div className="flex justify-between items-center">
                             <Label className="text-sm">{loc.label}</Label>
                             <Button
@@ -608,8 +787,28 @@ const ProgramFormModal = ({
                             {tier.location_hotels?.[loc.name]?.hotels.map(
                               (h, hIndex) => (
                                 <div
-                                  key={`${tier.id}-${loc.name}-${hIndex}`}
-                                  className="flex items-center gap-1"
+                                  key={h.id} // Use stable ID
+                                  draggable="true"
+                                  onDragStart={(e) =>
+                                    handleDragStart(
+                                      e,
+                                      "hotel",
+                                      hIndex,
+                                      tier.id,
+                                      loc.name
+                                    )
+                                  }
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) =>
+                                    handleDrop(
+                                      e,
+                                      hIndex,
+                                      "hotel",
+                                      tier.id,
+                                      loc.name
+                                    )
+                                  }
+                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
                                 >
                                   <Input
                                     value={h.name}
@@ -617,7 +816,7 @@ const ProgramFormModal = ({
                                       handleHotelChange(
                                         tier.id,
                                         loc.name,
-                                        hIndex,
+                                        h.id,
                                         e.target.value
                                       )
                                     }
@@ -627,7 +826,7 @@ const ProgramFormModal = ({
                                     variant="ghost"
                                     size="icon"
                                     onClick={() =>
-                                      removeHotel(tier.id, loc.name, hIndex)
+                                      removeHotel(tier.id, loc.name, h.id)
                                     }
                                   >
                                     <Trash2 className="h-4 w-4 text-red-500" />
@@ -653,10 +852,32 @@ const ProgramFormModal = ({
                               />
                             </div>
                             <div className="pl-4 space-y-1">
-                              {prices.map((room) => (
+                              {prices.map((room, roomIndex) => (
                                 <div
-                                  key={room.id}
-                                  className="flex items-center gap-1"
+                                  key={room.id} // Use stable ID
+                                  draggable="true"
+                                  onDragStart={(e) =>
+                                    handleDragStart(
+                                      e,
+                                      "roomPrice",
+                                      roomIndex,
+                                      tier.id,
+                                      undefined,
+                                      key
+                                    )
+                                  }
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) =>
+                                    handleDrop(
+                                      e,
+                                      roomIndex,
+                                      "roomPrice",
+                                      tier.id,
+                                      undefined,
+                                      key
+                                    )
+                                  }
+                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
                                 >
                                   <Input
                                     value={room.name}
