@@ -157,7 +157,11 @@ const ProgramFormModal = ({
     targetComboKey?: string
   ) => {
     e.preventDefault();
-    e.currentTarget.style.opacity = "1";
+    // Reset opacity on the drop target
+    const dropTarget = e.currentTarget;
+    if (dropTarget) {
+      dropTarget.style.opacity = "1";
+    }
 
     if (!draggedItem || draggedItem.type !== dropTargetType) {
       setDraggedItem(null);
@@ -815,7 +819,7 @@ const ProgramFormModal = ({
                                   )
                                 }
                                 onDragEnd={handleDragEnd}
-                                className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity"
+                                className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity p-1 border rounded-md"
                               >
                                 <Input
                                   value={h.name}
@@ -884,7 +888,7 @@ const ProgramFormModal = ({
                                     )
                                   }
                                   onDragEnd={handleDragEnd}
-                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity"
+                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity p-1 border rounded-md"
                                 >
                                   <Input
                                     value={room.name}
