@@ -134,6 +134,12 @@ const ProgramFormModal = ({
     setDraggedItem({ type, index, tierId, locationName, comboKey });
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", index.toString());
+    e.currentTarget.style.opacity = "0.5";
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLElement>) => {
+    e.currentTarget.style.opacity = "1";
+    setDraggedItem(null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
@@ -150,32 +156,30 @@ const ProgramFormModal = ({
     targetComboKey?: string
   ) => {
     e.preventDefault();
+    e.currentTarget.style.opacity = "1";
+
+    if (!draggedItem || draggedItem.type !== dropTargetType) {
+      setDraggedItem(null);
+      return;
+    }
 
     if (
-      !draggedItem ||
-      draggedItem.type !== dropTargetType ||
-      draggedItem.tierId !== targetTierId ||
-      draggedItem.locationName !== targetLocationName ||
-      draggedItem.comboKey !== targetComboKey
+      draggedItem.index === dropIndex &&
+      draggedItem.tierId === targetTierId &&
+      draggedItem.locationName === targetLocationName &&
+      draggedItem.comboKey === targetComboKey
     ) {
       setDraggedItem(null);
       return;
     }
 
-    const { type, index: startIndex } = draggedItem;
-
-    if (startIndex === dropIndex) {
-      setDraggedItem(null);
-      return;
-    }
-
     updateNestedState((draft) => {
-      switch (type) {
+      switch (draggedItem.type) {
         case "location":
           if (draft.locations) {
             draft.locations = reorderArray(
               draft.locations,
-              startIndex,
+              draggedItem.index,
               dropIndex
             );
           }
@@ -184,35 +188,36 @@ const ProgramFormModal = ({
           if (draft.packages) {
             draft.packages = reorderArray(
               draft.packages,
-              startIndex,
+              draggedItem.index,
               dropIndex
             );
           }
           break;
         case "hotel":
-          if (draggedItem.tierId && draggedItem.locationName) {
-            const tier = draft.packages?.find(
-              (t) => t.id === draggedItem.tierId
-            );
-            if (tier?.location_hotels?.[draggedItem.locationName]?.hotels) {
-              tier.location_hotels[draggedItem.locationName].hotels =
-                reorderArray(
-                  tier.location_hotels[draggedItem.locationName].hotels,
-                  startIndex,
-                  dropIndex
-                );
+          if (
+            draggedItem.tierId === targetTierId &&
+            draggedItem.locationName === targetLocationName
+          ) {
+            const tier = draft.packages?.find((t) => t.id === targetTierId);
+            if (tier?.location_hotels?.[targetLocationName!]?.hotels) {
+              tier.location_hotels[targetLocationName!].hotels = reorderArray(
+                tier.location_hotels[targetLocationName!].hotels,
+                draggedItem.index,
+                dropIndex
+              );
             }
           }
           break;
         case "roomPrice":
-          if (draggedItem.tierId && draggedItem.comboKey) {
-            const tier = draft.packages?.find(
-              (t) => t.id === draggedItem.tierId
-            );
-            if (tier?.pricing_combinations?.[draggedItem.comboKey]) {
-              tier.pricing_combinations[draggedItem.comboKey] = reorderArray(
-                tier.pricing_combinations[draggedItem.comboKey],
-                startIndex,
+          if (
+            draggedItem.tierId === targetTierId &&
+            draggedItem.comboKey === targetComboKey
+          ) {
+            const tier = draft.packages?.find((t) => t.id === targetTierId);
+            if (tier?.pricing_combinations?.[targetComboKey!]) {
+              tier.pricing_combinations[targetComboKey!] = reorderArray(
+                tier.pricing_combinations[targetComboKey!],
+                draggedItem.index,
                 dropIndex
               );
             }
@@ -671,7 +676,8 @@ const ProgramFormModal = ({
                       onDragStart={(e) => handleDragStart(e, "location", index)}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, index, "location")}
-                      className="flex items-center gap-2 p-1 border rounded-md bg-white cursor-grab active:cursor-grabbing"
+                      onDragEnd={handleDragEnd}
+                      className="flex items-center gap-2 p-1 border rounded-md bg-white cursor-grab active:cursor-grabbing transition-opacity"
                     >
                       <Input
                         value={loc.name}
@@ -738,7 +744,8 @@ const ProgramFormModal = ({
                   onDragStart={(e) => handleDragStart(e, "tier", index)}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, index, "tier")}
-                  className="bg-gray-50 rounded-lg mb-2 border cursor-grab active:cursor-grabbing"
+                  onDragEnd={handleDragEnd}
+                  className="bg-gray-50 rounded-lg mb-2 border cursor-grab active:cursor-grabbing transition-opacity"
                 >
                   <AccordionTrigger className="px-4 hover:no-underline">
                     <div className="flex items-center gap-2 flex-grow">
@@ -805,7 +812,8 @@ const ProgramFormModal = ({
                                     loc.name
                                   )
                                 }
-                                className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
+                                onDragEnd={handleDragEnd}
+                                className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity"
                               >
                                 <Input
                                   value={h.name}
@@ -873,7 +881,8 @@ const ProgramFormModal = ({
                                       key
                                     )
                                   }
-                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing"
+                                  onDragEnd={handleDragEnd}
+                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity"
                                 >
                                   <Input
                                     value={room.name}
