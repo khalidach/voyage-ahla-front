@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TierSelector from "./TierSelector";
 import HotelSelector from "./HotelSelector";
 import RoomSelector from "./RoomSelector";
 import PriceDisplay from "./PriceDisplay";
 import type { Program, PackageTier, Hotel, Pricing } from "../types/program";
-import { BedDouble, CalendarDays } from "lucide-react";
+import { BedDouble, CalendarDays } from "lucide-react"; // Import CalendarDays
 
 interface ProgramModalProps {
   program: Program;
@@ -16,6 +16,7 @@ type SelectedHotels = {
   [locationName: string]: string;
 };
 
+// Fixed the return type from 'any' to 'Pricing | null'
 const findMatchingPricing = (
   program: Program,
   tierData: PackageTier,
@@ -28,95 +29,98 @@ const findMatchingPricing = (
     (location) => selectedHotels[location.name]
   );
 
+  // The rest of this function's logic remains correct
   for (const combinationKey in pricingCombinations) {
-    if (Object.hasOwn(pricingCombinations, combinationKey)) {
-      const keySegments = combinationKey.split("_");
-      if (keySegments.length !== program.locations.length) continue;
+    const keySegments = combinationKey.split("_");
+    if (keySegments.length !== program.locations.length) continue;
 
-      let keyMatchesSelection = true;
-      for (let i = 0; i < keySegments.length; i++) {
-        const segment = keySegments[i];
-        const selectedHotelForLocation = userSelectedHotels[i];
-        if (!selectedHotelForLocation) {
-          keyMatchesSelection = false;
-          break;
-        }
-        const hotelsInSegment = segment.split(",");
-        if (!hotelsInSegment.includes(selectedHotelForLocation)) {
-          keyMatchesSelection = false;
-          break;
-        }
+    let keyMatchesSelection = true;
+    for (let i = 0; i < keySegments.length; i++) {
+      const segment = keySegments[i];
+      const selectedHotelForLocation = userSelectedHotels[i];
+      if (!selectedHotelForLocation) {
+        keyMatchesSelection = false;
+        break;
       }
-      if (keyMatchesSelection) {
-        return pricingCombinations[combinationKey];
+      const hotelsInSegment = segment.split(",");
+      if (!hotelsInSegment.includes(selectedHotelForLocation)) {
+        keyMatchesSelection = false;
+        break;
       }
+    }
+    if (keyMatchesSelection) {
+      return pricingCombinations[combinationKey];
     }
   }
   return null;
 };
 
 const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
-  const programTiers = useMemo(() => Object.keys(program.packages), [program]);
-
-  const [selectedTier, setSelectedTier] = useState<string>(
-    programTiers[0] || ""
-  );
+  const [selectedTier, setSelectedTier] = useState<string>("");
   const [selectedHotels, setSelectedHotels] = useState<SelectedHotels>({});
   const [selectedRoom, setSelectedRoom] = useState<string>("");
-
-  const tierData = useMemo(() => {
-    return selectedTier ? program.packages[selectedTier] : null;
-  }, [selectedTier, program.packages]);
+  const [currentPrice, setCurrentPrice] = useState<number>(0);
 
   useEffect(() => {
-    if (!tierData) return;
+    const tiers = Object.keys(program.packages);
+    if (tiers.length > 0) {
+      handleTierSelect(tiers[0]);
+    }
+  }, [program]);
 
+  useEffect(() => {
+    if (!selectedTier) return;
     const initialHotels: SelectedHotels = {};
+    const tierData = program.packages[selectedTier];
+    if (!tierData) return;
     program.locations.forEach((location) => {
       const tierLocationHotels =
         tierData.location_hotels?.[location.name]?.hotels;
-      initialHotels[location.name] = tierLocationHotels?.[0]?.name || "";
+      initialHotels[location.name] =
+        tierLocationHotels && tierLocationHotels.length > 0
+          ? tierLocationHotels[0].name
+          : "";
     });
-
     setSelectedHotels(initialHotels);
     setSelectedRoom("");
-  }, [tierData, program.locations]);
+    setCurrentPrice(0);
+  }, [selectedTier, program]);
 
-  const pricingData = useMemo(() => {
-    if (!tierData) return null;
+  useEffect(() => {
+    if (!selectedTier || !selectedRoom) {
+      setCurrentPrice(0);
+      return;
+    }
     const allHotelsSelected = program.locations.every(
       (location) => selectedHotels[location.name]
     );
-    if (!allHotelsSelected) return null;
-    return findMatchingPricing(program, tierData, selectedHotels);
-  }, [tierData, selectedHotels, program]);
+    if (allHotelsSelected) {
+      const tierData = program.packages[selectedTier];
+      if (!tierData) return;
+      const pricingData = findMatchingPricing(
+        program,
+        tierData,
+        selectedHotels
+      );
+      const price = pricingData ? pricingData[selectedRoom] : 0;
+      setCurrentPrice(price || 0);
+    } else {
+      setCurrentPrice(0);
+    }
+  }, [selectedHotels, selectedRoom, selectedTier, program]);
 
-  const roomOptions = useMemo(() => {
-    return pricingData ? Object.keys(pricingData) : [];
-  }, [pricingData]);
+  const handleTierSelect = (tier: string) => setSelectedTier(tier);
+  const handleRoomSelect = (room: string) => setSelectedRoom(room);
+  const handleHotelSelect = (hotel: string, locationName: string) =>
+    setSelectedHotels((prev) => ({ ...prev, [locationName]: hotel }));
 
-  const currentPrice = useMemo(() => {
-    return pricingData?.[selectedRoom] || 0;
-  }, [pricingData, selectedRoom]);
-
-  const handleTierSelect = useCallback((tier: string) => {
-    setSelectedTier(tier);
-  }, []);
-
-  const handleHotelSelect = useCallback(
-    (hotel: string, locationName: string) => {
-      setSelectedHotels((prev) => ({ ...prev, [locationName]: hotel }));
-      setSelectedRoom("");
-    },
-    []
-  );
-
-  const handleRoomSelect = useCallback((room: string) => {
-    setSelectedRoom(room);
-  }, []);
-
-  const handleBookNow = useCallback(() => {
-    if (!tierData || !selectedRoom || !currentPrice) return;
+  // Implemented the full booking logic
+  const handleBookNow = () => {
+    if (!program || !selectedTier || !selectedRoom || !currentPrice) return;
+    const allHotelsSelected = program.locations.every(
+      (loc) => selectedHotels[loc.name]
+    );
+    if (!allHotelsSelected) return;
 
     let tierLabel =
       selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1);
@@ -161,18 +165,17 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
         break;
     }
 
-    const hotelDetails = program.locations
-      .map(
-        (location) => `- ${location.label}: ${selectedHotels[location.name]}`
-      )
-      .join("\n");
+    let hotelDetails = "";
+    program.locations.forEach((location) => {
+      hotelDetails += `- ${location.label}: ${selectedHotels[location.name]}\n`;
+    });
 
     const message = encodeURIComponent(
       `مرحبا! أود حجز ${program.title}.\n\n` +
         `تفاصيل الباقة:\n` +
         `- الفئة: ${tierLabel}\n` +
         `- نوع الغرفة: ${roomLabel}\n` +
-        `${hotelDetails}\n` +
+        `${hotelDetails}` +
         `- المدة: ${
           program.nights === 1
             ? "ليلة واحدة"
@@ -189,22 +192,37 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
             : program.days >= 3 && program.days <= 10
             ? `${program.days} أيام`
             : `${program.days} يوم`
-        }\n` +
+        }\n` + // MODIFIED LINE
         `- السعر: ${currentPrice} درهم\n\n` +
         `الرجاء تزويدي بمزيد من التفاصيل حول التوافر وعملية الحجز.`
     );
 
     window.open(`https://wa.me/212778558505?text=${message}`, "_blank");
-  }, [program, selectedTier, selectedRoom, selectedHotels, currentPrice]);
+  };
 
-  const getHotelsForLocationAndTier = useCallback(
-    (locationName: string): Hotel[] => {
-      return tierData?.location_hotels?.[locationName]?.hotels || [];
-    },
-    [tierData]
-  );
+  const getRoomOptions = () => {
+    if (!program || !selectedTier) return [];
+    const allHotelsSelected = program.locations.every(
+      (loc) => selectedHotels[loc.name]
+    );
+    if (!allHotelsSelected) return [];
+    const tierData = program.packages[selectedTier];
+    if (!tierData) return [];
+    const pricingData = findMatchingPricing(program, tierData, selectedHotels);
+    return pricingData ? Object.keys(pricingData) : [];
+  };
 
-  const canBook = !!(selectedTier && selectedRoom && currentPrice > 0);
+  const getHotelsForLocationAndTier = (locationName: string): Hotel[] => {
+    if (!program || !selectedTier) return [];
+    const tierData = program.packages[selectedTier];
+    return tierData?.location_hotels?.[locationName]?.hotels || [];
+  };
+
+  const canBook =
+    selectedTier &&
+    selectedRoom &&
+    program.locations.every((loc) => selectedHotels[loc.name]) &&
+    currentPrice > 0;
 
   if (!program) return null;
 
@@ -212,12 +230,8 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay bg-black/50"
       dir="rtl"
-      onClick={onClose}
     >
-      <div
-        className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-gray-800">
@@ -232,7 +246,7 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
           </div>
 
           <TierSelector
-            tiers={programTiers}
+            tiers={Object.keys(program.packages)}
             selectedTier={selectedTier}
             onTierSelect={handleTierSelect}
           />
@@ -254,6 +268,7 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
                     }
                   />
                 ))}
+                {/* Display number of days and nights */}
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center text-gray-700">
                     <CalendarDays className="w-5 h-5 ml-2 text-gray-500" />
@@ -282,9 +297,9 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
                 </div>
               </div>
 
-              {roomOptions.length > 0 && (
+              {program.locations.every((loc) => selectedHotels[loc.name]) && (
                 <RoomSelector
-                  rooms={roomOptions}
+                  rooms={getRoomOptions()}
                   selectedRoom={selectedRoom}
                   onRoomSelect={handleRoomSelect}
                 />
