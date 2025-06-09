@@ -643,52 +643,50 @@ const ProgramFormModal = ({
                               />
                             </div>
                             <div className="pl-4 space-y-1">
-                              {prices
-                                .sort((a, b) => a.name.localeCompare(b.name))
-                                .map((room) => (
-                                  <div
-                                    key={room.id}
-                                    className="flex items-center gap-1"
+                              {prices.map((room) => (
+                                <div
+                                  key={room.id}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Input
+                                    value={room.name}
+                                    onChange={(e) =>
+                                      handleRoomPriceChange(
+                                        tier.id,
+                                        key,
+                                        room.id,
+                                        "name",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="نوع الغرفة"
+                                  />
+                                  <Input
+                                    type="number"
+                                    value={room.price}
+                                    onChange={(e) =>
+                                      handleRoomPriceChange(
+                                        tier.id,
+                                        key,
+                                        room.id,
+                                        "price",
+                                        Number(e.target.value)
+                                      )
+                                    }
+                                    placeholder="السعر"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      removeRoomPrice(tier.id, key, room.id)
+                                    }
                                   >
-                                    <Input
-                                      value={room.name}
-                                      onChange={(e) =>
-                                        handleRoomPriceChange(
-                                          tier.id,
-                                          key,
-                                          room.id,
-                                          "name",
-                                          e.target.value
-                                        )
-                                      }
-                                      placeholder="نوع الغرفة"
-                                    />
-                                    <Input
-                                      type="number"
-                                      value={room.price}
-                                      onChange={(e) =>
-                                        handleRoomPriceChange(
-                                          tier.id,
-                                          key,
-                                          room.id,
-                                          "price",
-                                          Number(e.target.value)
-                                        )
-                                      }
-                                      placeholder="السعر"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() =>
-                                        removeRoomPrice(tier.id, key, room.id)
-                                      }
-                                    >
-                                      <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              ))}
                               <Button
                                 type="button"
                                 variant="link"
