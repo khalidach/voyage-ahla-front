@@ -1,5 +1,5 @@
 // front-end/src/components/admin/ProgramFormModal.tsx
-
+// Add 'File' import for instanceof check
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -35,22 +35,29 @@ import type {
   Hotel,
 } from "@/types/program";
 
-// Internal state types to ensure stable keys
+// Update types to include `id` for client-side use
+type FormHotel = Hotel & { id: string };
+
 type FormRoomPrice = { id: string; name: string; price: number };
 type FormPricingCombination = { [combinationKey: string]: FormRoomPrice[] };
 type FormPackageTier = Omit<PackageTier, "pricing_combinations"> & {
-  id: string;
+  id: string; // Add ID for stable keys
   name: string;
+  location_hotels: {
+    [locationName: string]: { hotels: FormHotel[] }; // Use FormHotel
+  };
   pricing_combinations: FormPricingCombination;
 };
 
 type FormLocation = ProgramLocation & { id: string };
 
+// Define ProgramFormData to explicitly manage image string and image file
 type ProgramFormData = Omit<
   Partial<Program>,
-  "packages" | "days" | "nights" | "locations"
+  "packages" | "days" | "nights" | "locations" | "image"
 > & {
-  imageFile?: File | null;
+  image?: string; // This will hold the URL string from DB or an empty string for new
+  imageFile?: File | null; // This will hold the File object if a new one is selected
   packages?: FormPackageTier[];
   days?: number;
   nights?: number;
@@ -69,8 +76,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const initialFormData: ProgramFormData = {
   title: "",
   description: "",
-  image: "", // This will hold the URL string
-  imageFile: null, // This will hold the File object if a new one is selected
+  image: "", // Initialize as empty string
+  imageFile: null, // Initialize as null
   program_type: "umrah",
   days: 0,
   nights: 0,
@@ -79,8 +86,7 @@ const initialFormData: ProgramFormData = {
   packages: [],
 };
 
-const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"]; // Use English for internal consistency if the backend expects it.
-// The RoomSelector component handles the Arabic display names.
+const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"];
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
@@ -516,7 +522,7 @@ const ProgramFormModal = ({
           Object.entries(tierData.location_hotels || {}).map(
             ([locName, locData]) => [
               locName,
-              { hotels: locData.hotels.map(({ id, ...rest }: any) => rest) },
+              { hotels: locData.hotels.map(({ id, ...rest }) => rest) },
             ]
           )
         ),
@@ -537,13 +543,31 @@ const ProgramFormModal = ({
     );
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
-    // ⭐️ UPDATED LOGIC HERE ⭐️
-    // Use a different name for the file upload to avoid conflicts
-    if (formData.imageFile) {
+    // --- Image Handling Fix ---
+    console.log("Frontend - FormData before appending image:");
+    console.log("  formData.imageFile:", formData.imageFile);
+    console.log(
+      "  formData.image:",
+      formData.image,
+      "Type:",
+      typeof formData.image
+    );
+
+    if (formData.imageFile instanceof File) {
+      // If a new image file is selected, append it.
       dataToSend.append("imageFile", formData.imageFile);
-    } else if (formData.image && typeof formData.image === "string") {
+      // It's crucial not to send the 'image' field if a new file is being uploaded,
+      // to avoid any ambiguity or unintended parsing on the backend.
+    } else if (typeof formData.image === "string" && formData.image !== "") {
+      // If no new file is selected, and there's an existing image URL string,
+      // append it as the 'image' field for the backend to use.
       dataToSend.append("image", formData.image);
+    } else {
+      // This case handles new programs without an image, or when an image is removed.
+      // Append an empty string for 'image' to ensure the field exists in the form data.
+      dataToSend.append("image", "");
     }
+    // --- End Image Handling Fix ---
 
     try {
       const apiCall = isEditing
@@ -560,6 +584,12 @@ const ProgramFormModal = ({
       onOpenChange(false);
     } catch (err) {
       console.error("Error saving program:", err);
+      // Optional: Add a toast notification for the user
+      // toast({
+      //   title: "Failed to save program",
+      //   description: "Please try again. Check console for details.",
+      //   variant: "destructive",
+      // });
     }
   };
 
