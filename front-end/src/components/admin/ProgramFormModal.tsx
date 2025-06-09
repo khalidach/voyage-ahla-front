@@ -25,13 +25,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Trash2, PlusCircle, Upload } from "lucide-react";
-// Import Program and PackageTier from types/program
 import type { Program, ProgramLocation, PackageTier } from "@/types/program";
 
-// Extend ProgramFormData to include 'days' in PackageTier
 type ProgramFormData = Partial<Program> & {
   imageFile?: File | null;
-  // Ensure PackageTier has 'days' property here for form handling
   packages?: {
     [tierName: string]: Partial<PackageTier> & { days?: number };
   };
@@ -55,6 +52,30 @@ const initialFormData: ProgramFormData = {
   includes: [],
   locations: [],
   packages: {},
+};
+
+const defaultRoomTypes = ["single", "double", "triple", "quad", "quintuple"];
+
+// Helper function to generate cartesian product for hotel combinations
+const getHotelCombinations = (
+  locations: ProgramLocation[],
+  tierData: PackageTier
+): string[] => {
+  if (!locations || locations.length === 0) return [];
+
+  const hotelArrays = locations.map(
+    (loc) =>
+      tierData.location_hotels?.[loc.name]?.hotels
+        .map((h) => h.name)
+        .filter(Boolean) || []
+  );
+
+  if (hotelArrays.some((arr) => arr.length === 0)) return [];
+
+  return hotelArrays.reduce<string[]>((acc, current) => {
+    if (acc.length === 0) return current;
+    return acc.flatMap((c) => current.map((h) => `${c}_${h}`));
+  }, []);
 };
 
 const ProgramFormModal = ({
@@ -83,6 +104,44 @@ const ProgramFormModal = ({
       }
     }
   }, [programToEdit, isOpen, isEditing]);
+
+  // Automatically update pricing combinations when hotels change
+  useEffect(() => {
+    updateNestedState((draft) => {
+      if (!draft.locations || !draft.packages) return;
+
+      for (const tierName in draft.packages) {
+        const tier = draft.packages[tierName];
+        const existingCombinations = tier.pricing_combinations || {};
+        const newCombinations: { [key: string]: any } = {};
+
+        const generatedKeys = getHotelCombinations(
+          draft.locations,
+          tier as PackageTier
+        );
+
+        generatedKeys.forEach((key) => {
+          if (existingCombinations[key]) {
+            newCombinations[key] = existingCombinations[key];
+          } else {
+            newCombinations[key] = {};
+            defaultRoomTypes.forEach((room) => {
+              newCombinations[key][room] = 0;
+            });
+          }
+        });
+
+        tier.pricing_combinations = newCombinations;
+      }
+    });
+  }, [
+    formData.locations,
+    JSON.stringify(
+      formData.packages
+        ? Object.values(formData.packages).map((p) => p.location_hotels)
+        : []
+    ),
+  ]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -121,7 +180,7 @@ const ProgramFormModal = ({
       if (!draft.packages) draft.packages = {};
       draft.packages[key] = {
         nights: 0,
-        days: 0, // Initialize days for new tier
+        days: 0,
         location_hotels: {},
         pricing_combinations: {},
       };
@@ -132,7 +191,7 @@ const ProgramFormModal = ({
     });
   const handleTierChange = (
     oldName: string,
-    field: "name" | "nights" | "days", // Add "days" field
+    field: "name" | "nights" | "days",
     value: string
   ) => {
     updateNestedState((draft) => {
@@ -143,7 +202,6 @@ const ProgramFormModal = ({
       if (field === "nights") {
         data.nights = Number(value) || 0;
       } else if (field === "days") {
-        // Handle days change
         data.days = Number(value) || 0;
       } else if (field === "name" && value && oldName !== value) {
         delete packages[oldName];
@@ -175,39 +233,17 @@ const ProgramFormModal = ({
         draft.packages[tier].location_hotels[loc].hotels[hIndex].name = name;
     });
 
-  const addCombination = (tier: string) =>
-    updateNestedState((draft) => {
-      const key = `new_combo_${Date.now()}`;
-      if (!draft.packages?.[tier]?.pricing_combinations)
-        draft.packages[tier].pricing_combinations = {};
-      draft.packages[tier].pricing_combinations[key] = {};
-    });
-  const removeCombination = (tier: string, key: string) =>
-    updateNestedState((draft) => {
-      delete draft.packages?.[tier]?.pricing_combinations?.[key];
-    });
-  const handleCombinationKeyChange = (
-    tier: string,
-    oldKey: string,
-    newKey: string
-  ) =>
-    updateNestedState((draft) => {
-      const prices = draft.packages?.[tier]?.pricing_combinations?.[oldKey];
-      if (prices && newKey) {
-        delete draft.packages[tier].pricing_combinations[oldKey];
-        draft.packages[tier].pricing_combinations[newKey] = prices;
-      }
-    });
-
   const addRoomPrice = (tier: string, comboKey: string) =>
     updateNestedState((draft) => {
-      const key = `new_room_${Date.now()}`;
-      draft.packages[tier].pricing_combinations[comboKey][key] = 0;
+      const newRoomName = `new_room_${Date.now()}`;
+      draft.packages[tier].pricing_combinations[comboKey][newRoomName] = 0;
     });
+
   const removeRoomPrice = (tier: string, comboKey: string, room: string) =>
     updateNestedState((draft) => {
       delete draft.packages?.[tier]?.pricing_combinations?.[comboKey]?.[room];
     });
+
   const handleRoomPriceChange = (
     tier: string,
     comboKey: string,
@@ -249,7 +285,7 @@ const ProgramFormModal = ({
     dataToSend.append("program_type", formData.program_type || "umrah");
     dataToSend.append("includes", JSON.stringify(formData.includes || []));
     dataToSend.append("locations", JSON.stringify(formData.locations || []));
-    dataToSend.append("packages", JSON.stringify(formData.packages || {})); // packages already contains 'days' now
+    dataToSend.append("packages", JSON.stringify(formData.packages || {}));
 
     if (formData.imageFile) {
       dataToSend.append("image", formData.imageFile);
@@ -460,9 +496,9 @@ const ProgramFormModal = ({
                           placeholder="الليالي"
                           className="w-24"
                         />
-                        <Input // ADDED DAYS INPUT
+                        <Input
                           type="number"
-                          value={tierData.days || ""} // MODIFIED THIS LINE: Ensure value is a string, even if tierData.days is 0, null, or undefined
+                          value={tierData.days || ""}
                           onChange={(e) =>
                             handleTierChange(tierName, "days", e.target.value)
                           }
@@ -538,20 +574,7 @@ const ProgramFormModal = ({
                         ))}
                       </div>
                       <div className="p-3 bg-white rounded border space-y-2">
-                        <div className="flex justify-between items-center">
-                          <Label className="font-semibold">
-                            تسعيرات الباقة
-                          </Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => addCombination(tierName)}
-                          >
-                            <PlusCircle className="ml-1 h-3 w-3" />
-                            إضافة تركيبة
-                          </Button>
-                        </div>
+                        <Label className="font-semibold">تسعيرات الباقة</Label>
                         {Object.entries(
                           tierData.pricing_combinations || {}
                         ).map(([key, prices]) => (
@@ -559,23 +582,10 @@ const ProgramFormModal = ({
                             <div className="flex items-center gap-2">
                               <Input
                                 value={key}
-                                onChange={(e) =>
-                                  handleCombinationKeyChange(
-                                    tierName,
-                                    key,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="HotelA_HotelB..."
+                                readOnly
+                                className="bg-gray-100"
+                                placeholder="تركيبة الفنادق"
                               />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeCombination(tierName, key)}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
                             </div>
                             <div className="pl-4 space-y-1">
                               {Object.entries(prices).map(([room, price]) => (
@@ -610,7 +620,6 @@ const ProgramFormModal = ({
                                     }
                                     placeholder="السعر"
                                   />
-
                                   <Button
                                     type="button"
                                     variant="ghost"
