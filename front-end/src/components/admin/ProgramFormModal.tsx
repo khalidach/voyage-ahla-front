@@ -24,7 +24,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Trash2, PlusCircle, Upload } from "lucide-react";
+import { Trash2, PlusCircle, Upload, GripVertical } from "lucide-react";
 import type {
   Program,
   ProgramLocation,
@@ -131,6 +131,9 @@ const ProgramFormModal = ({
     locationName?: string,
     comboKey?: string
   ) => {
+    // Stop the event from bubbling up to parent draggable elements
+    e.stopPropagation();
+
     setDraggedItem({ type, index, tierId, locationName, comboKey });
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", index.toString());
@@ -140,6 +143,8 @@ const ProgramFormModal = ({
   };
 
   const handleDragEnd = (e: React.DragEvent<HTMLElement>) => {
+    // Stop the event from bubbling up
+    e.stopPropagation();
     e.currentTarget.style.opacity = "1";
     setDraggedItem(null);
   };
@@ -157,25 +162,24 @@ const ProgramFormModal = ({
     targetComboKey?: string
   ) => {
     e.preventDefault();
-    // Reset opacity on the drop target
-    const dropTarget = e.currentTarget;
-    if (dropTarget) {
-      dropTarget.style.opacity = "1";
-    }
+    e.stopPropagation();
 
-    if (!draggedItem || draggedItem.type !== dropTargetType) {
+    e.currentTarget.style.opacity = "1";
+
+    if (
+      !draggedItem ||
+      draggedItem.type !== dropTargetType ||
+      draggedItem.tierId !== targetTierId ||
+      draggedItem.locationName !== targetLocationName ||
+      draggedItem.comboKey !== targetComboKey
+    ) {
       setDraggedItem(null);
       return;
     }
 
     const { type, index: startIndex } = draggedItem;
 
-    if (
-      startIndex === dropIndex &&
-      draggedItem.tierId === targetTierId &&
-      draggedItem.locationName === targetLocationName &&
-      draggedItem.comboKey === targetComboKey
-    ) {
+    if (startIndex === dropIndex) {
       setDraggedItem(null);
       return;
     }
@@ -201,10 +205,7 @@ const ProgramFormModal = ({
           }
           break;
         case "hotel":
-          if (
-            draggedItem.tierId === targetTierId &&
-            draggedItem.locationName === targetLocationName
-          ) {
+          {
             const tier = draft.packages?.find((t) => t.id === targetTierId);
             if (tier?.location_hotels?.[targetLocationName!]) {
               tier.location_hotels[targetLocationName!].hotels = reorderArray(
@@ -216,10 +217,7 @@ const ProgramFormModal = ({
           }
           break;
         case "roomPrice":
-          if (
-            draggedItem.tierId === targetTierId &&
-            draggedItem.comboKey === targetComboKey
-          ) {
+          {
             const tier = draft.packages?.find((t) => t.id === targetTierId);
             if (tier?.pricing_combinations?.[targetComboKey!]) {
               tier.pricing_combinations[targetComboKey!] = reorderArray(
@@ -819,8 +817,9 @@ const ProgramFormModal = ({
                                   )
                                 }
                                 onDragEnd={handleDragEnd}
-                                className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity p-1 border rounded-md"
+                                className="flex items-center gap-1 p-1 border rounded-md bg-white transition-opacity"
                               >
+                                <GripVertical className="cursor-grab active:cursor-grabbing text-gray-400" />
                                 <Input
                                   value={h.name}
                                   onChange={(e) =>
@@ -888,8 +887,9 @@ const ProgramFormModal = ({
                                     )
                                   }
                                   onDragEnd={handleDragEnd}
-                                  className="flex items-center gap-1 cursor-grab active:cursor-grabbing transition-opacity p-1 border rounded-md"
+                                  className="flex items-center gap-1 p-1 border rounded-md bg-white transition-opacity"
                                 >
+                                  <GripVertical className="cursor-grab active:cursor-grabbing text-gray-400" />
                                   <Input
                                     value={room.name}
                                     onChange={(e) =>
