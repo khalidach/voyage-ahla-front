@@ -176,7 +176,23 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
         `- الفئة: ${tierLabel}\n` +
         `- نوع الغرفة: ${roomLabel}\n` +
         `${hotelDetails}` +
-        `- المدة: ${program.days} أيام و ${program.nights} ليالي\n` + // MODIFIED LINE
+        `- المدة: ${
+          program.nights === 1
+            ? "ليلة واحدة"
+            : program.nights === 2
+            ? "ليلتين"
+            : program.nights >= 3 && program.nights <= 10
+            ? `${program.nights} ليالي`
+            : `${program.nights} ليلة`
+        } و ${
+          program.days === 1
+            ? "يوم واحد"
+            : program.days === 2
+            ? "يومين"
+            : program.days >= 3 && program.days <= 10
+            ? `${program.days} أيام`
+            : `${program.days} يوم`
+        }\n` + // MODIFIED LINE
         `- السعر: ${currentPrice} درهم\n\n` +
         `الرجاء تزويدي بمزيد من التفاصيل حول التوافر وعملية الحجز.`
     );
@@ -256,11 +272,27 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center text-gray-700">
                     <CalendarDays className="w-5 h-5 ml-2 text-gray-500" />
-                    <p className="font-semibold">{program.days} أيام</p>
+                    <p className="font-semibold">
+                      {program.days === 1
+                        ? "يوم"
+                        : program.days === 2
+                        ? "يومين"
+                        : program.days >= 3 && program.days <= 10
+                        ? `${program.days} أيام`
+                        : `${program.days} يوم`}
+                    </p>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <BedDouble className="w-5 h-5 ml-2 text-gray-500" />
-                    <p className="font-semibold">{program.nights} ليالي</p>
+                    <p className="font-semibold">
+                      {program.nights === 1
+                        ? "ليلة"
+                        : program.nights === 2
+                        ? "ليلتين"
+                        : program.nights >= 3 && program.nights <= 10
+                        ? `${program.nights} ليالي`
+                        : `${program.nights} ليلة`}
+                    </p>
                   </div>
                 </div>
               </div>

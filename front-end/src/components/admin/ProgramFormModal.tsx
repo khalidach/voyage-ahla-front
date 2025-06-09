@@ -648,6 +648,7 @@ const ProgramFormModal = ({
                   <SelectContent>
                     <SelectItem value="umrah">عمرة</SelectItem>
                     <SelectItem value="tourism">سياحة</SelectItem>
+                    <SelectItem value="hajj">حج</SelectItem>
                     <SelectItem value="other">آخر</SelectItem>
                   </SelectContent>
                 </Select>
