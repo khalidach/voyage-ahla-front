@@ -134,7 +134,9 @@ const ProgramFormModal = ({
     setDraggedItem({ type, index, tierId, locationName, comboKey });
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", index.toString());
-    e.currentTarget.style.opacity = "0.5";
+    setTimeout(() => {
+      e.currentTarget.style.opacity = "0.5";
+    }, 0);
   };
 
   const handleDragEnd = (e: React.DragEvent<HTMLElement>) => {
@@ -144,7 +146,6 @@ const ProgramFormModal = ({
 
   const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
   };
 
   const handleDrop = (
@@ -163,8 +164,10 @@ const ProgramFormModal = ({
       return;
     }
 
+    const { type, index: startIndex } = draggedItem;
+
     if (
-      draggedItem.index === dropIndex &&
+      startIndex === dropIndex &&
       draggedItem.tierId === targetTierId &&
       draggedItem.locationName === targetLocationName &&
       draggedItem.comboKey === targetComboKey
@@ -174,12 +177,12 @@ const ProgramFormModal = ({
     }
 
     updateNestedState((draft) => {
-      switch (draggedItem.type) {
+      switch (type) {
         case "location":
           if (draft.locations) {
             draft.locations = reorderArray(
               draft.locations,
-              draggedItem.index,
+              startIndex,
               dropIndex
             );
           }
@@ -188,7 +191,7 @@ const ProgramFormModal = ({
           if (draft.packages) {
             draft.packages = reorderArray(
               draft.packages,
-              draggedItem.index,
+              startIndex,
               dropIndex
             );
           }
@@ -199,10 +202,10 @@ const ProgramFormModal = ({
             draggedItem.locationName === targetLocationName
           ) {
             const tier = draft.packages?.find((t) => t.id === targetTierId);
-            if (tier?.location_hotels?.[targetLocationName!]?.hotels) {
+            if (tier?.location_hotels?.[targetLocationName!]) {
               tier.location_hotels[targetLocationName!].hotels = reorderArray(
                 tier.location_hotels[targetLocationName!].hotels,
-                draggedItem.index,
+                startIndex,
                 dropIndex
               );
             }
@@ -217,7 +220,7 @@ const ProgramFormModal = ({
             if (tier?.pricing_combinations?.[targetComboKey!]) {
               tier.pricing_combinations[targetComboKey!] = reorderArray(
                 tier.pricing_combinations[targetComboKey!],
-                draggedItem.index,
+                startIndex,
                 dropIndex
               );
             }
@@ -225,7 +228,6 @@ const ProgramFormModal = ({
           break;
       }
     });
-
     setDraggedItem(null);
   };
 
@@ -352,13 +354,13 @@ const ProgramFormModal = ({
 
   const handleLocationChange = (
     id: string,
-    field: keyof ProgramLocation,
+    field: keyof Omit<ProgramLocation, "id" | "_id">,
     value: string
   ) =>
     updateNestedState((draft) => {
       const location = draft.locations?.find((loc) => loc.id === id);
       if (location) {
-        (location as any)[field] = value;
+        location[field] = value;
       }
     });
 
@@ -406,7 +408,7 @@ const ProgramFormModal = ({
       if (tier?.location_hotels?.[locName]?.hotels) {
         tier.location_hotels[locName].hotels = tier.location_hotels[
           locName
-        ].hotels.filter((h: any) => h.id !== hotelId);
+        ].hotels.filter((h) => h.id !== hotelId);
       }
     });
 
@@ -419,7 +421,7 @@ const ProgramFormModal = ({
     updateNestedState((draft) => {
       const tier = draft.packages?.find((t) => t.id === tierId);
       const hotel = tier?.location_hotels?.[locName]?.hotels.find(
-        (h: any) => h.id === hotelId
+        (h) => h.id === hotelId
       );
       if (hotel) {
         hotel.name = name;
@@ -789,7 +791,7 @@ const ProgramFormModal = ({
                           <div className="space-y-1 mt-1">
                             {(
                               tier.location_hotels?.[loc.name]?.hotels || []
-                            ).map((h: any, hIndex: number) => (
+                            ).map((h, hIndex: number) => (
                               <div
                                 key={h.id}
                                 draggable="true"
