@@ -36,10 +36,10 @@ const Programs = () => {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true); // <-- Added loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true); // Start with loading true
+    setLoading(true);
     axios
       .get(`${API_BASE_URL}/programs/`)
       .then((response) => {
@@ -52,23 +52,13 @@ const Programs = () => {
         );
       })
       .finally(() => {
-        setLoading(false); // Set loading to false after fetch completes
+        setLoading(false);
       });
   }, []);
 
   const openModal = (program: ProgramType) => {
-    axios
-      .get(`${API_BASE_URL}/programs/${program._id}`)
-      .then((response) => {
-        setSelectedProgram(response.data);
-        setIsModalOpen(true);
-      })
-      .catch((error) => {
-        console.error("Error fetching full program details:", error);
-        // Fallback to the program data if detailed fetch fails
-        setSelectedProgram(program);
-        setIsModalOpen(true);
-      });
+    setSelectedProgram(program);
+    setIsModalOpen(true);
   };
 
   const closeModal = () => {
@@ -128,7 +118,6 @@ const Programs = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading ? (
-              // Render 3 skeleton cards while loading
               Array.from({ length: 3 }).map((_, index) => (
                 <ProgramCardSkeleton key={index} />
               ))
