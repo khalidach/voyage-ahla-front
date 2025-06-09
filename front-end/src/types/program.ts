@@ -15,8 +15,8 @@ export interface Pricing {
 }
 
 export interface PackageTier {
-  nights: number;
-  days?: number; // ADD THIS LINE (if not already present)
+  // nights: number; // REMOVED
+  // days?: number; // REMOVED
   location_hotels: {
     [locationName: string]: TierLocationHotels;
   };
@@ -37,6 +37,8 @@ export interface Program {
   description: string;
   image: string; // Now explicitly a URL
   program_type: "umrah" | "tourism" | "other";
+  days: number; // ADDED
+  nights: number; // ADDED
   locations: ProgramLocation[];
   packages: {
     [tierName: string]: PackageTier;

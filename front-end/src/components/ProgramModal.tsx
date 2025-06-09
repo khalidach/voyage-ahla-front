@@ -121,8 +121,6 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
       (loc) => selectedHotels[loc.name]
     );
     if (!allHotelsSelected) return;
-    const tierData = program.packages[selectedTier];
-    if (!tierData) return;
 
     let tierLabel =
       selectedTier.charAt(0).toUpperCase() + selectedTier.slice(1);
@@ -178,7 +176,7 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
         `- الفئة: ${tierLabel}\n` +
         `- نوع الغرفة: ${roomLabel}\n` +
         `${hotelDetails}` +
-        `- المدة: ${tierData.days} أيام و ${tierData.nights} ليالي\n` + // Modified line
+        `- المدة: ${program.days} أيام و ${program.nights} ليالي\n` + // MODIFIED LINE
         `- السعر: ${currentPrice} درهم\n\n` +
         `الرجاء تزويدي بمزيد من التفاصيل حول التوافر وعملية الحجز.`
     );
@@ -211,8 +209,6 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
     currentPrice > 0;
 
   if (!program) return null;
-
-  const currentTierData = program.packages[selectedTier];
 
   return (
     <div
@@ -257,22 +253,16 @@ const ProgramModal = ({ program, onClose }: ProgramModalProps) => {
                   />
                 ))}
                 {/* Display number of days and nights */}
-                {currentTierData && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center text-gray-700">
-                      <CalendarDays className="w-5 h-5 ml-2 text-gray-500" />
-                      <p className="font-semibold">
-                        {currentTierData.days} أيام
-                      </p>
-                    </div>
-                    <div className="flex items-center text-gray-700">
-                      <BedDouble className="w-5 h-5 ml-2 text-gray-500" />
-                      <p className="font-semibold">
-                        {currentTierData.nights} ليالي
-                      </p>
-                    </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center text-gray-700">
+                    <CalendarDays className="w-5 h-5 ml-2 text-gray-500" />
+                    <p className="font-semibold">{program.days} أيام</p>
                   </div>
-                )}
+                  <div className="flex items-center text-gray-700">
+                    <BedDouble className="w-5 h-5 ml-2 text-gray-500" />
+                    <p className="font-semibold">{program.nights} ليالي</p>
+                  </div>
+                </div>
               </div>
 
               {program.locations.every((loc) => selectedHotels[loc.name]) && (

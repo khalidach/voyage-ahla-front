@@ -11,8 +11,8 @@ const TierLocationHotelsSchema = new Schema({
 });
 
 const PackageTierSchema = new Schema({
-  nights: { type: Number, required: true },
-  days: { type: Number, required: true }, // ADD THIS LINE
+  // nights: { type: Number, required: true }, // REMOVED FROM HERE
+  // days: { type: Number, required: true }, // REMOVED FROM HERE
   location_hotels: {
     type: Map,
     of: TierLocationHotelsSchema,
@@ -41,6 +41,8 @@ const programSchema = new Schema(
       required: true,
       enum: ["umrah", "tourism", "other"],
     },
+    days: { type: Number, required: true }, // ADDED HERE
+    nights: { type: Number, required: true }, // ADDED HERE
     locations: [ProgramLocationSchema],
     packages: {
       type: Map,

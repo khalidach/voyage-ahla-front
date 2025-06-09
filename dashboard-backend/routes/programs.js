@@ -44,12 +44,18 @@ router.route("/add").post(async (req, res) => {
       return res.status(400).json("Error: Image is required.");
     }
 
-    // Destructure `days` from req.body
-    const { title, description, program_type, locations, packages, includes } =
-      req.body;
+    // Destructure `days` and `nights` from req.body
+    const {
+      title,
+      description,
+      program_type,
+      locations,
+      packages,
+      includes,
+      days,
+      nights,
+    } = req.body;
 
-    // The 'days' property is already included when JSON.parse(packages) is done.
-    // Removed the problematic loop that tried to re-parse it from a non-existent field.
     const parsedPackages = JSON.parse(packages);
 
     const newProgram = new Program({
@@ -57,8 +63,10 @@ router.route("/add").post(async (req, res) => {
       description,
       image: imageUrl,
       program_type,
+      days,
+      nights,
       locations: JSON.parse(locations),
-      packages: parsedPackages, // Use the parsed packages with days
+      packages: parsedPackages,
       includes: JSON.parse(includes),
     });
 
@@ -101,12 +109,12 @@ router.route("/update/:id").post(async (req, res) => {
     program.description = req.body.description;
     program.image = imageUrl;
     program.program_type = req.body.program_type;
+    program.days = req.body.days;
+    program.nights = req.body.nights;
     program.locations = JSON.parse(req.body.locations);
 
-    // The 'days' property is already included when JSON.parse(req.body.packages) is done.
-    // Removed the problematic loop that tried to re-parse it from a non-existent field.
     const updatedPackages = JSON.parse(req.body.packages);
-    program.packages = updatedPackages; // Use the updated packages with days
+    program.packages = updatedPackages;
 
     program.includes = JSON.parse(req.body.includes);
 

@@ -104,7 +104,6 @@ const Programs = () => {
             {programs.length > 0 ? (
               programs.map((program, index) => {
                 const lowestPrice = getLowestPrice(program);
-                const firstTier = Object.values(program.packages)[0];
 
                 return (
                   <div
@@ -126,29 +125,26 @@ const Programs = () => {
                         {getProgramTypeLabel(program.program_type)}
                       </Badge>
                       {/* DAYS & NIGHTS DISPLAY */}
-                      {firstTier && (
+                      {program.days > 0 && program.nights > 0 && (
                         <div className="absolute bottom-4 left-4 bg-black/70 text-white px-2 py-1 rounded text-sm">
                           <span className="font-semibold">
-                            {firstTier.days > 0 &&
-                              (firstTier.days === 1
-                                ? "يوم"
-                                : firstTier.days === 2
-                                ? "يومين"
-                                : firstTier.days >= 3 && firstTier.days <= 10
-                                ? `${firstTier.days} أيام`
-                                : `${firstTier.days} يوم`)}
+                            {program.days === 1
+                              ? "يوم"
+                              : program.days === 2
+                              ? "يومين"
+                              : program.days >= 3 && program.days <= 10
+                              ? `${program.days} أيام`
+                              : `${program.days} يوم`}
                           </span>{" "}
                           /{" "}
                           <span className="font-semibold">
-                            {firstTier.nights > 0 &&
-                              (firstTier.nights === 1
-                                ? "ليلة"
-                                : firstTier.nights === 2
-                                ? "ليلتين"
-                                : firstTier.nights >= 3 &&
-                                  firstTier.nights <= 10
-                                ? `${firstTier.nights} ليالي`
-                                : `${firstTier.nights} ليلة`)}
+                            {program.nights === 1
+                              ? "ليلة"
+                              : program.nights === 2
+                              ? "ليلتين"
+                              : program.nights >= 3 && program.nights <= 10
+                              ? `${program.nights} ليالي`
+                              : `${program.nights} ليلة`}
                           </span>
                         </div>
                       )}

@@ -30,7 +30,6 @@ import type {
   ProgramLocation,
   PackageTier,
   Pricing,
-  TierLocationHotels,
 } from "@/types/program";
 
 // Internal state types to ensure stable keys
@@ -42,9 +41,14 @@ type FormPackageTier = Omit<PackageTier, "pricing_combinations"> & {
   pricing_combinations: FormPricingCombination;
 };
 
-type ProgramFormData = Omit<Partial<Program>, "packages"> & {
+type ProgramFormData = Omit<
+  Partial<Program>,
+  "packages" | "days" | "nights"
+> & {
   imageFile?: File | null;
   packages?: FormPackageTier[];
+  days?: number;
+  nights?: number;
 };
 
 interface ProgramFormModalProps {
@@ -62,6 +66,8 @@ const initialFormData: ProgramFormData = {
   image: "",
   imageFile: null,
   program_type: "umrah",
+  days: 0,
+  nights: 0,
   includes: [],
   locations: [],
   packages: [],
@@ -212,8 +218,6 @@ const ProgramFormModal = ({
       const newTier: FormPackageTier = {
         id: `tier_${Date.now()}`,
         name: `new_tier_${(draft.packages?.length || 0) + 1}`,
-        nights: 0,
-        days: 0,
         location_hotels: {},
         pricing_combinations: {},
       };
@@ -225,15 +229,11 @@ const ProgramFormModal = ({
       draft.packages = draft.packages?.filter((t) => t.id !== tierId);
     });
 
-  const handleTierChange = (
-    tierId: string,
-    field: "name" | "nights" | "days",
-    value: string | number
-  ) =>
+  const handleTierNameChange = (tierId: string, value: string) =>
     updateNestedState((draft) => {
       const tier = draft.packages?.find((t) => t.id === tierId);
       if (tier) {
-        (tier[field] as any) = value;
+        tier.name = value;
       }
     });
 
@@ -347,6 +347,8 @@ const ProgramFormModal = ({
     dataToSend.append("title", formData.title || "");
     dataToSend.append("description", formData.description || "");
     dataToSend.append("program_type", formData.program_type || "umrah");
+    dataToSend.append("days", String(formData.days || 0));
+    dataToSend.append("nights", String(formData.nights || 0));
     dataToSend.append("includes", JSON.stringify(formData.includes || []));
     dataToSend.append("locations", JSON.stringify(formData.locations || []));
     dataToSend.append("packages", JSON.stringify(packagesForApi));
@@ -387,7 +389,6 @@ const ProgramFormModal = ({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {/* ... (Main program fields like title, description, image, etc. - no changes here) ... */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -399,6 +400,30 @@ const ProgramFormModal = ({
                   onChange={handleInputChange}
                   required
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="days">الأيام</Label>
+                  <Input
+                    id="days"
+                    name="days"
+                    type="number"
+                    value={formData.days || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="nights">الليالي</Label>
+                  <Input
+                    id="nights"
+                    name="nights"
+                    type="number"
+                    value={formData.nights || ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="program_type">النوع</Label>
@@ -545,38 +570,10 @@ const ProgramFormModal = ({
                       <Input
                         value={tier.name}
                         onChange={(e) =>
-                          handleTierChange(tier.id, "name", e.target.value)
+                          handleTierNameChange(tier.id, e.target.value)
                         }
                         onClick={(e) => e.stopPropagation()}
                         placeholder="اسم الباقة"
-                      />
-                      <Input
-                        type="number"
-                        value={tier.nights || ""}
-                        onChange={(e) =>
-                          handleTierChange(
-                            tier.id,
-                            "nights",
-                            Number(e.target.value)
-                          )
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="الليالي"
-                        className="w-24"
-                      />
-                      <Input
-                        type="number"
-                        value={tier.days || ""}
-                        onChange={(e) =>
-                          handleTierChange(
-                            tier.id,
-                            "days",
-                            Number(e.target.value)
-                          )
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="الأيام"
-                        className="w-24"
                       />
                     </div>
                     <Button
