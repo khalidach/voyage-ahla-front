@@ -1,3 +1,5 @@
+// front-end/src/components/admin/ProgramFormModal.tsx
+
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -67,8 +69,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const initialFormData: ProgramFormData = {
   title: "",
   description: "",
-  image: "",
-  imageFile: null,
+  image: "", // This will hold the URL string
+  imageFile: null, // This will hold the File object if a new one is selected
   program_type: "umrah",
   days: 0,
   nights: 0,
@@ -77,7 +79,8 @@ const initialFormData: ProgramFormData = {
   packages: [],
 };
 
-const defaultRoomTypes = ["خماسية", "رباعية", "ثلاثية", "ثنائية"];
+const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"]; // Use English for internal consistency if the backend expects it.
+// The RoomSelector component handles the Arabic display names.
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
@@ -288,7 +291,8 @@ const ProgramFormModal = ({
             id: `loc_${Date.now()}_${Math.random()}`,
           })),
           packages: packagesArray,
-          imageFile: null,
+          imageFile: null, // Clear imageFile as we're using the existing URL
+          image: programToEdit.image, // Ensure the existing image URL is explicitly kept as a string
         });
         setImagePreview(programToEdit.image);
       } else {
@@ -323,7 +327,15 @@ const ProgramFormModal = ({
     });
   }, [
     formData.locations,
-    JSON.stringify(formData.packages?.map((p) => p.location_hotels) || []),
+    // Deep dependency on packages' location_hotels to trigger updates
+    JSON.stringify(
+      formData.packages?.map((p) =>
+        Object.entries(p.location_hotels || {}).map(([locName, locData]) => ({
+          locName,
+          hotels: locData.hotels.map((h) => h.name),
+        }))
+      ) || []
+    ),
   ]);
 
   const updateNestedState = (updateLogic: (draft: ProgramFormData) => void) => {
@@ -436,7 +448,7 @@ const ProgramFormModal = ({
       if (tier?.pricing_combinations?.[comboKey]) {
         tier.pricing_combinations[comboKey].push({
           id: `room_${Date.now()}_${Math.random()}`,
-          name: "new_room",
+          name: "single", // Default to a common room type
           price: 0,
         });
       }
@@ -474,11 +486,12 @@ const ProgramFormModal = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, imageFile: file }));
+      setFormData((prev) => ({ ...prev, imageFile: file, image: "" })); // Clear image URL if a new file is selected
       setImagePreview(URL.createObjectURL(file));
     } else {
-      setFormData((prev) => ({ ...prev, imageFile: null }));
-      setImagePreview(null);
+      setFormData((prev) => ({ ...prev, imageFile: null })); // Keep existing image URL if no new file
+      // If no file is selected, but there was an existing image, imagePreview should reflect that.
+      // If there was no existing image, it will remain null.
     }
   };
 
@@ -526,10 +539,20 @@ const ProgramFormModal = ({
     );
     dataToSend.append("packages", JSON.stringify(packagesForApi));
 
+    // CRITICAL PART: Ensure either a File or a string URL is sent, never an object.
     if (formData.imageFile) {
+      // If a new file was selected
       dataToSend.append("image", formData.imageFile);
-    } else if (isEditing && formData.image) {
+    } else if (formData.image && typeof formData.image === "string") {
+      // If no new file, but an existing image URL string is present
       dataToSend.append("image", formData.image);
+    } else {
+      // Handle cases where no image is provided or it's an invalid type
+      // You might want to display a toast error here for the user
+      // Or set a default image on the backend.
+      console.error("No image selected or invalid image type for submission.");
+      // For now, it will send an empty string if no file and no string image
+      dataToSend.append("image", "");
     }
 
     try {
@@ -547,6 +570,7 @@ const ProgramFormModal = ({
       onOpenChange(false);
     } catch (err) {
       console.error("Error saving program:", err);
+      // You should add toast notifications for success/failure here for the user
     }
   };
 
@@ -636,7 +660,7 @@ const ProgramFormModal = ({
                     <img
                       src={imagePreview}
                       alt="Preview"
-                      className="max-h-32 mx-auto rounded-md mb-2"
+                      className="max-h-32 mx-auto rounded-md mb-2 object-cover"
                     />
                   ) : (
                     <div className="text-gray-500 p-4">لا توجد صورة</div>
