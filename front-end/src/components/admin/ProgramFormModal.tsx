@@ -78,7 +78,7 @@ const initialFormData: ProgramFormData = {
   packages: [],
 };
 
-const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"]; // Use internal names for sorting
+const defaultRoomTypes = ["خماسية", "رباعية", "ثلاثية", "ثنائية"]; // Use internal names for sorting
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
