@@ -85,7 +85,7 @@ const initialFormData: ProgramFormData = {
   packages: [],
 };
 
-const defaultRoomTypes = ["quintuple", "quad", "triple", "double", "single"];
+const defaultRoomTypes = ["خماسية", "رباعية", "ثلاثية", "ثنائية"];
 
 const getHotelCombinations = (
   locations: ProgramLocation[],
