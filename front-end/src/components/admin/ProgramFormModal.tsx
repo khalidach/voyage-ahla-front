@@ -345,8 +345,18 @@ const ProgramFormModal = ({
 
   const updateNestedState = (updateLogic: (draft: ProgramFormData) => void) => {
     setFormData((prev) => {
+      // Deep copy using stringify, which loses non-serializable data like File objects.
       const draft = JSON.parse(JSON.stringify(prev));
+
+      // If there was a File object in the previous state, restore it to the new draft.
+      if (prev.imageFile) {
+        draft.imageFile = prev.imageFile;
+      }
+
+      // Apply the intended mutation.
       updateLogic(draft);
+
+      // Return the updated state object.
       return draft;
     });
   };
